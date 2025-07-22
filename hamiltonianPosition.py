@@ -27,7 +27,7 @@ off_diag = np.full(N - 1, 1)
 kineticMatrix = diags([off_diag, main_diag, off_diag], offsets=[-1, 0, 1])
 
 # potential matrix
-potentialMatrix = diags([x_list], [0])
+potentialMatrix = diags([x_list**2], [0])
 
 # hamiltonian -> H = K + P
 H = kineticConstant * kineticMatrix + potentialConstant * potentialMatrix
@@ -35,3 +35,11 @@ H = kineticConstant * kineticMatrix + potentialConstant * potentialMatrix
 # eigenvalues and vectors
 numStates = 5
 eigenvalues, eigenstates = eigsh(H, k=numStates, which='SM')
+
+# plot
+plt.scatter(eigenvalues.real, eigenvalues.imag)
+plt.title("Complex Plane")
+plt.xlabel("Real")
+plt.ylabel("Imaginary")
+plt.grid(True)
+plt.show()
