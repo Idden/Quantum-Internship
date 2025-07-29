@@ -36,10 +36,15 @@ H = kineticConstant * kineticMatrix + potentialConstant * potentialMatrix
 numStates = 5
 eigenvalues, eigenstates = eigsh(H, k=numStates, which='SM')
 
-# plot
+# plot eigenvalues
 plt.scatter(eigenvalues.real, eigenvalues.imag)
 plt.title("Complex Plane")
 plt.xlabel("Real")
 plt.ylabel("Imaginary")
 plt.grid(True)
+plt.show()
+
+# plot eigenstates 0 and 1
+plt.plot(x_list, eigenstates[:,0]**2)
+plt.plot(x_list, eigenstates[:,1]**2)
 plt.show()
