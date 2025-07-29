@@ -2,13 +2,12 @@ import qutip as qt
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse import diags
-from scipy.sparse.linalg import eigsh
 
 # constants
 hbar = 1
 omega = 1
 mass = 1
-x_0 = 0
+x_0 = 3
 
 # sigma
 sig = np.sqrt(hbar / (omega * mass))
@@ -46,10 +45,22 @@ tlist = np.linspace(0, 5, 100)
 # time evolution
 evol = qt.sesolve(H, psi0, tlist)
 
-# plot
+# eigenvalues and vectors
+eigenvalues, eigenstates = H.eigenstates()
+
+# plot time evolution
 plt.figure()
 psi_t = evol.states[0]
-plt.plot(x_list, np.abs(psi_t.full().flatten())**2)
+plt.plot(x_list, np.abs(psi_t.full().flatten())**2) # full turns Qobj into 2Darray and flatten turns column into row
+plt.xlabel("x")
+plt.ylabel("Probability")
+plt.show()
+
+# plot eigenstates
+plt.figure()
+psi0_eigen = eigenstates[6]
+waveFunc = psi0_eigen.full().flatten()
+plt.plot(x_list, np.abs(waveFunc)**2)
 plt.xlabel("x")
 plt.ylabel("Probability")
 plt.show()
