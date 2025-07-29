@@ -58,9 +58,10 @@ plt.show()
 
 # plot eigenstates
 plt.figure()
-psi0_eigen = eigenstates[6]
+energy = 6
+psi0_eigen = eigenstates[energy]
 waveFunc = psi0_eigen.full().flatten()
 plt.plot(x_list, np.abs(waveFunc)**2)
 plt.xlabel("x")
-plt.ylabel("Probability")
+plt.ylabel(f"Probability at Energy {energy}")
 plt.show()
