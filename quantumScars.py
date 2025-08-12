@@ -44,5 +44,9 @@ def binNoConsecOnes(N):
 
     return listNoConsecOnes
 
+# task 2: redo
+def binNoConsecOnesEfficient(N):
+    pass
+
 # task 3: sparse matrix set up
 sparseHamiltonian = csr_matrix(([0], ([0], [0])), shape=[100, 100])
