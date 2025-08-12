@@ -1,20 +1,19 @@
 import math
+from scipy.sparse import csr_matrix
 
-binNum = "10010"
-
+# task 1: make function that turns binary to decimal
 def binToDeci(num):
     
-    startBase = math.pow(2, len(num))
+    startBase = math.pow(2, len(num)-1)
     deciNum = 0
 
     for i in range(len(num)):
-        deciNum += int(num) * startBase
+        deciNum += int(num[i]) * startBase
         startBase /= 2
+        
+    return int(deciNum)
 
-    return deciNum
-
-
-
+# task 2: no consecutive ones in binary sequence
 def binNoConsecOnes(N):
 
     if N == 0:
@@ -43,4 +42,7 @@ def binNoConsecOnes(N):
 
         listNoConsecOnes.append(currNum)
 
-    print(listNoConsecOnes)
+    return listNoConsecOnes
+
+# task 3: sparse matrix set up
+sparseHamiltonian = csr_matrix(([0], ([0], [0])), shape=[100, 100])
