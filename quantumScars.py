@@ -67,7 +67,5 @@ def binNoConsecOnesEfficient(N):
     
     return listNoConsecOnes
 
-print(binNoConsecOnes(4))
-
 # task 3: sparse matrix set up
 sparseHamiltonian = csr_matrix(([0], ([0], [0])), shape=[100, 100])
