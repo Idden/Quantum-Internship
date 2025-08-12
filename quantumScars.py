@@ -46,7 +46,28 @@ def binNoConsecOnes(N):
 
 # task 2: redo
 def binNoConsecOnesEfficient(N):
-    pass
+    
+    def recursiveBin(n, prevNum, currNum):
+
+        #print(prefix, "b")
+        
+        if n == 0:
+            listNoConsecOnes.append(currNum)
+            return
+        
+        recursiveBin(n - 1, '0', currNum + '0')
+
+        #print(prefix, "a")
+        
+        if prevNum != '1':
+            recursiveBin(n - 1, '1', currNum + '1')
+
+    listNoConsecOnes = []
+    recursiveBin(N, None, "")
+    
+    return listNoConsecOnes
+
+print(binNoConsecOnes(4))
 
 # task 3: sparse matrix set up
 sparseHamiltonian = csr_matrix(([0], ([0], [0])), shape=[100, 100])
