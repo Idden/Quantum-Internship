@@ -2,6 +2,7 @@ import math
 from scipy.sparse import csr_matrix
 import numpy as np
 import qutip as qt
+import matplotlib.pyplot as plt
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -70,7 +71,7 @@ def binNoConsecOnesEfficient(N):
     return listNoConsecOnes
 
 # task 3: sparse matrix set up
-N = 5
+N = 4
 basisList = binNoConsecOnesEfficient(N)
 basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
 basisLen = len(basisList)
@@ -117,22 +118,71 @@ matrixHamiltonian = sparseHamiltonian.toarray()
 matrixHamiltonian = qt.Qobj(matrixHamiltonian)
 #print(matrixHamiltonian)
 
+eigenvalues, eigenstates = matrixHamiltonian.eigenstates()
+
 # creates z2 state
 def z2_initial(N):
 
-    Z2_state = ''
+    z2_state = ''
     for i in range(N):
         
         if i % 2 == 0:
-            Z2_state += '1'
+            z2_state += '1'
         if i % 2 == 1:
-            Z2_state += '0'
+            z2_state += '0'
 
-    return Z2_state
+    return z2_state
 
 z2_str = z2_initial(N)
 z2_index = basisMap[z2_str]
 psi0 = qt.basis(basisLen, z2_index)
 
-tlist = np.linspace(0, 5, 200)
+tlist = np.linspace(0, 100, 200)
 evolState = qt.sesolve(matrixHamiltonian, psi0, tlist)
+
+amps = []
+# for states in evolState.states:
+#     amps.append(psi0.dag() * states)
+
+# for states in eigenstates:
+#     amps.append(psi0.dag() * states)
+
+# plt.figure()
+# plt.plot(eigenvalues, np.abs(amps)**2, ".")
+# plt.yscale("log")
+# plt.show()
+
+
+copyBasis = basisList
+#print(copyBasis)
+
+diagH1 = []
+for i in range(basisLen):
+    bitString = list(copyBasis[i])
+    bitString = [int(i) for i in bitString]
+
+    z2bitString = list(z2_initial(N))
+    z2bitString = 2*np.array([int(i) for i in z2bitString])-1
+
+    diagH1.append(np.dot(2*np.array(bitString)-1, z2bitString))
+
+rowH1 = [i for i in range(basisLen)]
+columnH1 = [i for i in range(basisLen)]
+H1 = csr_matrix((diagH1, (rowH1, columnH1)), shape=[basisLen, basisLen])
+H1 = qt.Qobj(H1)
+
+def coeff(t, A, omega):
+    return A * np.sin(omega * t)
+
+args={"A": 1.0, "omega": 1.0}
+H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args)
+
+psi_t = qt.sesolve(H, psi0, tlist)
+
+amps2 = []
+for states in psi_t.states:
+    amps2.append(states.dag() * matrixHamiltonian * states)
+
+plt.figure()
+plt.plot(tlist, amps2)
+plt.show()
