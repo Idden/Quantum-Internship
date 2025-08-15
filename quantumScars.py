@@ -1,6 +1,7 @@
 import math
 from scipy.sparse import csr_matrix
 import numpy as np
+import qutip as qt
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -80,14 +81,8 @@ column = []
 
 #print(basisList)
 
-# function to flip bits
-def flipBit(bit):
-
-    if bit == '0':
-        return '1'
-    
-    if bit == '1':
-        return '0'
+# flip bit hashmap
+flipMap = {'0': '1', '1': '0'}
 
 for i in range(basisLen):
 
@@ -99,7 +94,7 @@ for i in range(basisLen):
     for j in range(1, N+1):
         
         if paddedBitStr[j-1] == '0' and paddedBitStr[j+1] == '0':
-            copyBit[j] = flipBit(paddedBitStr[j])
+            copyBit[j] = flipMap[paddedBitStr[j]]
             flippedList.append(''.join(copyBit)[1:-1])
             copyBit = list(paddedBitStr)
         
@@ -119,4 +114,25 @@ onesList = np.ones(len(row), dtype=int)
 
 sparseHamiltonian = csr_matrix((onesList, (row, column)), shape=[basisLen, basisLen])
 matrixHamiltonian = sparseHamiltonian.toarray()
+matrixHamiltonian = qt.Qobj(matrixHamiltonian)
 #print(matrixHamiltonian)
+
+# creates z2 state
+def z2_initial(N):
+
+    Z2_state = ''
+    for i in range(N):
+        
+        if i % 2 == 0:
+            Z2_state += '1'
+        if i % 2 == 1:
+            Z2_state += '0'
+
+    return Z2_state
+
+z2_str = z2_initial(N)
+z2_index = basisMap[z2_str]
+psi0 = qt.basis(basisLen, z2_index)
+
+tlist = np.linspace(0, 5, 200)
+evolState = qt.sesolve(matrixHamiltonian, psi0, tlist)
