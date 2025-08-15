@@ -17,37 +17,6 @@ def binToDeci(num):
     return int(deciNum)
 
 # task 2: no consecutive ones in binary sequence
-def binNoConsecOnes(N):
-
-    if N == 0:
-        return
-
-    listNoConsecOnes = []
-    consecOnes = None
-
-    for i in range(int(math.pow(2, N))):
-        
-        currNum = str(bin(i))[2:]
-        consecOnes = False
-
-        if len(currNum) == 1:
-            listNoConsecOnes.append(currNum)
-            continue
-
-        for j in range(len(currNum)-1):
-
-            if currNum[j] == currNum[j+1] and currNum[j] == '1':
-                consecOnes = True
-                break
-        
-        if consecOnes:
-            continue
-
-        listNoConsecOnes.append(currNum)
-
-    return listNoConsecOnes
-
-# task 2: redo
 def binNoConsecOnesEfficient(N):
 
     def recursiveBin(n, prevNum, currNum):
@@ -70,6 +39,19 @@ def binNoConsecOnesEfficient(N):
     
     return listNoConsecOnes
 
+# creates z2 state
+def z2_initial(N):
+
+    z2_state = ''
+    for i in range(N):
+        
+        if i % 2 == 0:
+            z2_state += '1'
+        if i % 2 == 1:
+            z2_state += '0'
+
+    return z2_state
+
 # task 3: sparse matrix set up
 N = 4
 basisList = binNoConsecOnesEfficient(N)
@@ -79,8 +61,6 @@ flippedList = []
 
 row = []
 column = []
-
-#print(basisList)
 
 # flip bit hashmap
 flipMap = {'0': '1', '1': '0'}
@@ -99,8 +79,6 @@ for i in range(basisLen):
             flippedList.append(''.join(copyBit)[1:-1])
             copyBit = list(paddedBitStr)
         
-    #print(flippedList)
-
     # adds row and column values for the sparse matrix
     for k in range(len(flippedList)):
         
@@ -109,80 +87,81 @@ for i in range(basisLen):
         
     flippedList.clear()
 
+# list of ones for the sparse matrix
 onesList = np.ones(len(row), dtype=int)
 
-#print(row, column)
-
+# create the sparse matrix and turn it into a Qobj
 sparseHamiltonian = csr_matrix((onesList, (row, column)), shape=[basisLen, basisLen])
 matrixHamiltonian = sparseHamiltonian.toarray()
 matrixHamiltonian = qt.Qobj(matrixHamiltonian)
-#print(matrixHamiltonian)
 
+# diagonalize the sparse matrix
 eigenvalues, eigenstates = matrixHamiltonian.eigenstates()
 
-# creates z2 state
-def z2_initial(N):
-
-    z2_state = ''
-    for i in range(N):
-        
-        if i % 2 == 0:
-            z2_state += '1'
-        if i % 2 == 1:
-            z2_state += '0'
-
-    return z2_state
-
+# initial state
 z2_str = z2_initial(N)
 z2_index = basisMap[z2_str]
 psi0 = qt.basis(basisLen, z2_index)
 
+# time evolution of sparse matrix
 tlist = np.linspace(0, 100, 200)
 evolState = qt.sesolve(matrixHamiltonian, psi0, tlist)
 
-amps = []
+# inner product between conjugate of initial state and each eigenstate of sparse matrix
+# amplitudes = []
+
 # for states in evolState.states:
-#     amps.append(psi0.dag() * states)
+#     amplitudes.append(psi0.dag() * states)
 
 # for states in eigenstates:
-#     amps.append(psi0.dag() * states)
+#     amplitudes.append(psi0.dag() * states)
 
+# graph the amplitudes of above
 # plt.figure()
-# plt.plot(eigenvalues, np.abs(amps)**2, ".")
+# plt.plot(eigenvalues, np.abs(amplitudes)**2, ".")
 # plt.yscale("log")
 # plt.show()
 
-
+# create H1 operator for QobjEvo!
 copyBasis = basisList
-#print(copyBasis)
-
 diagH1 = []
+
+# switches 0s to -1s and keeps 1s the same for the copyBasis
+# appends to diagH1 the dot product between each bit string and the 0 -> -1 Z2 state
 for i in range(basisLen):
+
     bitString = list(copyBasis[i])
     bitString = [int(i) for i in bitString]
 
     z2bitString = list(z2_initial(N))
-    z2bitString = 2*np.array([int(i) for i in z2bitString])-1
+    z2bitString = 2 * np.array([int(i) for i in z2bitString]) - 1
 
-    diagH1.append(np.dot(2*np.array(bitString)-1, z2bitString))
+    diagH1.append(np.dot(2 * np.array(bitString) - 1, z2bitString))
 
+# rows and columns lists for diagonal positions in H1
 rowH1 = [i for i in range(basisLen)]
 columnH1 = [i for i in range(basisLen)]
+
+# creates sparse matrix with diagonals as diagH1 list
 H1 = csr_matrix((diagH1, (rowH1, columnH1)), shape=[basisLen, basisLen])
 H1 = qt.Qobj(H1)
 
+# function and args for QobjEvo
+args={"A": 1.0, "omega": 1.0}
 def coeff(t, A, omega):
     return A * np.sin(omega * t)
 
-args={"A": 1.0, "omega": 1.0}
+# create H using QobjEvo
 H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args)
 
-psi_t = qt.sesolve(H, psi0, tlist)
+# evolve the H through time
+psi_t = qt.sesolve(H, eigenstates[0], tlist)
 
-amps2 = []
+# plot the expectation values of the sparse matrix
+expectationVals = []
 for states in psi_t.states:
-    amps2.append(states.dag() * matrixHamiltonian * states)
+    expectationVals.append(states.dag() * matrixHamiltonian * states)
 
 plt.figure()
-plt.plot(tlist, amps2)
+plt.plot(tlist, expectationVals)
 plt.show()
