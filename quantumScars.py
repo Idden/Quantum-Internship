@@ -3,7 +3,6 @@ from scipy.sparse import csr_matrix
 import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -161,9 +160,10 @@ for omega in wlist:
     args = {"A": 1.0, "omega": omega}
     H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args) # create H using QobjEvo
     psi_t = qt.sesolve(H, eigenstates[0], tlist) # evolve the H through time
+    tempExpectation = []
 
     for states in psi_t.states:
-        
+
         val = states.dag() * matrixHamiltonian * states
         tempExpectation.append(val.real)
 
@@ -180,7 +180,3 @@ plt.xlabel("Time (t)")
 plt.ylabel("Omega (ω)")
 plt.title("Expectation Value Density Plot")
 plt.show()
-
-# plt.figure()
-# plt.plot(tlist, expectationVals)
-# plt.show()
