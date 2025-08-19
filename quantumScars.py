@@ -159,12 +159,12 @@ tempExpectation = []
 for omega in wlist:
 
     args = {"A": 1.0, "omega": omega}
-    H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args) # create H using QobjEvo
+    H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args)
     psi_t = qt.sesolve(H, eigenstates[0], tlist) # evolve the H through time
 
     for states in psi_t.states:
         
-        val = states.dag() * matrixHamiltonian * states
+        val = states.dag() * H * states
         tempExpectation.append(val.real)
 
     expectationVals.append(tempExpectation)
@@ -180,7 +180,3 @@ plt.xlabel("Time (t)")
 plt.ylabel("Omega (ω)")
 plt.title("Expectation Value Density Plot")
 plt.show()
-
-# plt.figure()
-# plt.plot(tlist, expectationVals)
-# plt.show()
