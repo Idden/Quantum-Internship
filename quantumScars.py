@@ -3,6 +3,7 @@ from scipy.sparse import csr_matrix
 import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -146,22 +147,40 @@ columnH1 = [i for i in range(basisLen)]
 H1 = csr_matrix((diagH1, (rowH1, columnH1)), shape=[basisLen, basisLen])
 H1 = qt.Qobj(H1)
 
-# function and args for QobjEvo
-args={"A": 1.0, "omega": 1.0}
+# function for QobjEvo
 def coeff(t, A, omega):
     return A * np.sin(omega * t)
 
-# create H using QobjEvo
-H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args)
-
-# evolve the H through time
-psi_t = qt.sesolve(H, eigenstates[0], tlist)
-
-# plot the expectation values of the sparse matrix
+# plot the expectation values of the sparse matrix throughout time
+wlist = np.linspace(0.5, 2.0, 50)
 expectationVals = []
-for states in psi_t.states:
-    expectationVals.append(states.dag() * matrixHamiltonian * states)
+tempExpectation = []
 
-plt.figure()
-plt.plot(tlist, expectationVals)
+for omega in wlist:
+
+    args = {"A": 1.0, "omega": omega}
+    H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args) # create H using QobjEvo
+    psi_t = qt.sesolve(H, eigenstates[0], tlist) # evolve the H through time
+
+    for states in psi_t.states:
+        
+        val = states.dag() * matrixHamiltonian * states
+        tempExpectation.append(val.real)
+
+    expectationVals.append(tempExpectation)
+
+plt.imshow(expectationVals,
+           extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
+           origin='lower',
+           aspect='auto',
+           cmap='viridis')
+plt.colorbar(label="Expectation value")
+
+plt.xlabel("Time (t)")
+plt.ylabel("Omega (ω)")
+plt.title("Expectation Value Density Plot")
 plt.show()
+
+# plt.figure()
+# plt.plot(tlist, expectationVals)
+# plt.show()
