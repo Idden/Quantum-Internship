@@ -163,14 +163,14 @@ for omega in wlist:
 
     expectationVals.append(tempExpectation)
 
-plt.imshow(expectationVals,
-           extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
-           origin='lower',
-           aspect='auto',
-           cmap='viridis')
-plt.colorbar(label="Expectation value")
+# plt.imshow(expectationVals,
+#            extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
+#            origin='lower',
+#            aspect='auto',
+#            cmap='viridis')
+# plt.colorbar(label="Expectation value")
 
-plt.xlabel("Time (t)")
-plt.ylabel("Omega (ω)")
-plt.title("Expectation Value Density Plot")
-plt.show()
+# plt.xlabel("Time (t)")
+# plt.ylabel("Omega (ω)")
+# plt.title("Expectation Value Density Plot")
+# plt.show()
