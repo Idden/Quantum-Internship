@@ -31,11 +31,7 @@ def plotAmpEigenstatesZ2(H, z2Ket):
     plt.figure()
     plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
     plt.yscale("log")
-    plt.show()
-
-def plotProbEigenstatesZ2(H, z2Ket):
     plt.ylim(10**-5, 1)
-    plt.yscale("log")
     plt.show()
 
 def plotProbZ2Time(H, z2Ket):
