@@ -47,7 +47,7 @@ def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
 # task 3: sparse matrix set up
-N = 4
+N = 14
 basisList = binNoConsecOnesEfficient(N)
 basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
 basisLen = len(basisList)
@@ -98,7 +98,7 @@ z2_index = basisMap[z2_str]
 psi0 = qt.basis(basisLen, z2_index)
 
 # time evolution of sparse matrix
-tlist = np.linspace(0, 100, 200)
+tlist = np.linspace(0, 400, 500)
 evolState = qt.sesolve(matrixHamiltonian, psi0, tlist)
 
 # inner product between conjugate of initial state and each eigenstate of sparse matrix
@@ -145,13 +145,13 @@ def coeff(t, A, omega):
     return A * np.sin(omega * t)
 
 # plot the expectation values of the sparse matrix throughout time
-wlist = np.linspace(0.5, 2.0, 50)
+wlist = np.linspace(0.5, 5.0, 50)
 expectationVals = []
 tempExpectation = []
 
 for omega in wlist:
 
-    args = {"A": 1.0, "omega": omega}
+    args = {"A": 0.1, "omega": omega}
     H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args) # create H using QobjEvo
     psi_t = qt.sesolve(H, eigenstates[0], tlist) # evolve the H through time
     tempExpectation = []
@@ -163,14 +163,18 @@ for omega in wlist:
 
     expectationVals.append(tempExpectation)
 
-# plt.imshow(expectationVals,
-#            extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
-#            origin='lower',
-#            aspect='auto',
-#            cmap='viridis')
-# plt.colorbar(label="Expectation value")
+plt.imshow(expectationVals,
+           extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
+           origin='lower',
+           aspect='auto',
+           cmap='viridis')
+plt.colorbar(label="Expectation value")
 
-# plt.xlabel("Time (t)")
-# plt.ylabel("Omega (ω)")
-# plt.title("Expectation Value Density Plot")
+plt.xlabel("Time (t)")
+plt.ylabel("Omega (ω)")
+plt.title("Expectation Value Density Plot")
 # plt.show()
+
+# plotEigEnergies(matrixHamiltonian)
+# plotAmpEigenstatesZ2(matrixHamiltonian, psi0)
+# plotProbZ2Time(matrixHamiltonian, psi0)
