@@ -29,11 +29,11 @@ def plotAmpEigenstatesZ2(H, z2Ket):
         amplitudes.append(z2Ket.dag() * states)
 
     plt.figure()
-    plt.plot(eigenvalues, amplitudes.real, ".")
+    plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
     plt.yscale("log")
     plt.show()
 
-def plotProbEigenstatesZ2(H, z2Ket, level=0):
+def plotProbEigenstatesZ2(H, z2Ket):
 
     if not isinstance(H, Qobj):
         print("Matrix must be Qobj")

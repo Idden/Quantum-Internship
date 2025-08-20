@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 zp_yaml = """# zero-pi
 branches:
-- [JJ, 1,2, EJ = 50, 2]
-- [JJ, 3,4, EJ, 20]
-- [L, 2,3, 0.008]
-- [L, 4,1, 0.008]
+- [JJ, 1,2, EJ = 100, 2]
+- [JJ, 3,4, EJ, 60]
+- [L, 2,3, 0.02]
+- [L, 4,1, 0.02]
 - [C, 1,3, 0.02]
 - [C, 2,4, 0.02]
 """
@@ -21,9 +21,9 @@ anharm = E12 - E01
 print(f"E01={E01:.4f} GHz, anharm={anharm:.4f} GHz")
 
 # plot eigen energies
-# plt.figure()
-# plt.plot(range(len(evals)), evals, "o-")
-# plt.xlabel("Energy level index")
-# plt.ylabel("Energy (GHz)")
-# plt.show()
+plt.figure()
+plt.plot(range(len(evals)), evals, "o-")
+plt.xlabel("Energy level index")
+plt.ylabel("Energy (GHz)")
+plt.show()
 

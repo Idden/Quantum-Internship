@@ -145,13 +145,13 @@ def coeff(t, A, omega):
     return A * np.sin(omega * t)
 
 # plot the expectation values of the sparse matrix throughout time
-wlist = np.linspace(0.5, 2.0, 50)
+wlist = np.linspace(0.5, 5.0, 50)
 expectationVals = []
 tempExpectation = []
 
 for omega in wlist:
 
-    args = {"A": 1.0, "omega": omega}
+    args = {"A": 0.1, "omega": omega}
     H = qt.QobjEvo([matrixHamiltonian, [H1, coeff]], args=args) # create H using QobjEvo
     psi_t = qt.sesolve(H, eigenstates[0], tlist) # evolve the H through time
     tempExpectation = []
@@ -163,14 +163,14 @@ for omega in wlist:
 
     expectationVals.append(tempExpectation)
 
-# plt.imshow(expectationVals,
-#            extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
-#            origin='lower',
-#            aspect='auto',
-#            cmap='viridis')
-# plt.colorbar(label="Expectation value")
+plt.imshow(expectationVals,
+           extent=[tlist.min(), tlist.max(), wlist.min(), wlist.max()],
+           origin='lower',
+           aspect='auto',
+           cmap='viridis')
+plt.colorbar(label="Expectation value")
 
-# plt.xlabel("Time (t)")
-# plt.ylabel("Omega (ω)")
-# plt.title("Expectation Value Density Plot")
-# plt.show()
+plt.xlabel("Time (t)")
+plt.ylabel("Omega (ω)")
+plt.title("Expectation Value Density Plot")
+plt.show()
