@@ -4,6 +4,9 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 
+from quantumScarsCheck import *
+from quantumScarsPlotting import *
+
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
     
@@ -41,16 +44,7 @@ def binNoConsecOnesEfficient(N):
 
 # creates z2 state
 def z2_initial(N):
-
-    z2_state = ''
-    for i in range(N):
-        
-        if i % 2 == 0:
-            z2_state += '1'
-        if i % 2 == 1:
-            z2_state += '0'
-
-    return z2_state
+    return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
 # task 3: sparse matrix set up
 N = 4
