@@ -47,7 +47,7 @@ def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
 # task 3: sparse matrix set up
-N = 4
+N = 14
 basisList = binNoConsecOnesEfficient(N)
 basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
 basisLen = len(basisList)
@@ -98,7 +98,7 @@ z2_index = basisMap[z2_str]
 psi0 = qt.basis(basisLen, z2_index)
 
 # time evolution of sparse matrix
-tlist = np.linspace(0, 100, 200)
+tlist = np.linspace(0, 400, 500)
 evolState = qt.sesolve(matrixHamiltonian, psi0, tlist)
 
 # inner product between conjugate of initial state and each eigenstate of sparse matrix
@@ -174,3 +174,8 @@ plt.xlabel("Time (t)")
 plt.ylabel("Omega (ω)")
 plt.title("Expectation Value Density Plot")
 plt.show()
+# plt.show()
+
+# plotEigEnergies(matrixHamiltonian)
+# plotAmpEigenstatesZ2(matrixHamiltonian, psi0)
+# plotProbZ2Time(matrixHamiltonian, psi0)
