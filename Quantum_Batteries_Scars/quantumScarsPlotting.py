@@ -12,7 +12,7 @@ def plotEigEnergies(H):
     eigenvalues = H.eigenenergies()
 
     plt.figure()
-    plt.scatter(eigenvalues, [0 for i in range(len(eigenvalues))])
+    plt.plot(eigenvalues, ".")
     plt.show()
 
 def plotAmpEigenstatesZ2(H, z2Ket):
@@ -34,6 +34,11 @@ def plotAmpEigenstatesZ2(H, z2Ket):
     plt.show()
 
 def plotProbEigenstatesZ2(H, z2Ket):
+    plt.ylim(10**-5, 1)
+    plt.yscale("log")
+    plt.show()
+
+def plotProbZ2Time(H, z2Ket):
 
     if not isinstance(H, Qobj):
         print("Matrix must be Qobj")
