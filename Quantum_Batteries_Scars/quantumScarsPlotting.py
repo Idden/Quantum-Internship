@@ -13,6 +13,7 @@ def plotEigEnergies(H):
 
     plt.figure()
     plt.plot(eigenvalues, ".")
+    plt.savefig("eigEnergies.pdf")
     plt.show()
 
 def plotAmpEigenstatesZ2(H, z2Ket):
@@ -32,6 +33,7 @@ def plotAmpEigenstatesZ2(H, z2Ket):
     plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
     plt.yscale("log")
     plt.ylim(10**-5, 1)
+    plt.savefig("ampEigenstateZ2.pdf")
     plt.show()
 
 def plotProbZ2Time(H, z2Ket):
@@ -50,4 +52,5 @@ def plotProbZ2Time(H, z2Ket):
 
     plt.figure()
     plt.plot(tlist, np.abs(amplitudes)**2)
+    plt.savefig("ampTimeZ2.pdf")
     plt.show()
