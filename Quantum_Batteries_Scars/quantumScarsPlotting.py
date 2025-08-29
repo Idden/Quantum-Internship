@@ -13,6 +13,9 @@ def plotEigEnergies(H):
 
     plt.figure()
     plt.plot(eigenvalues, ".")
+    plt.xlabel("Eigenvalue")
+    plt.ylabel("Energy")
+    plt.title("Energies of Eigenvalues")
     plt.savefig("plots//eigEnergies.pdf")
     plt.show()
 
@@ -33,6 +36,9 @@ def plotAmpEigenstatesZ2(H, z2Ket):
     plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
     plt.yscale("log")
     plt.ylim(10**-5, 1)
+    plt.xlabel("Time")
+    plt.ylabel("Probability")
+    plt.title("Overlap of Z2 State with Itself Over Time")
     plt.savefig("plots//ampEigenstateZ2.pdf")
     plt.show()
 
@@ -52,5 +58,8 @@ def plotProbZ2Time(H, z2Ket):
 
     plt.figure()
     plt.plot(tlist, np.abs(amplitudes)**2)
+    plt.xlabel("Eigenstate")
+    plt.ylabel("Probability")
+    plt.title("Overlap of Z2 State and Eigenstates")
     plt.savefig("plots//ampTimeZ2.pdf")
     plt.show()
