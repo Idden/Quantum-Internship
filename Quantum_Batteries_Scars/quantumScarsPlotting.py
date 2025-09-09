@@ -5,9 +5,9 @@ from qutip import Qobj
 
 def plotEigEnergies(H):
     
-    if not isinstance(H, Qobj):
-        print("Matrix must be Qobj")
-        return 1
+    # if not isinstance(H, Qobj):
+    #     print("Matrix must be Qobj")
+    #     return 1
 
     eigenvalues = H.eigenenergies()
 
@@ -21,9 +21,9 @@ def plotEigEnergies(H):
 
 def plotAmpEigenstatesZ2(H, z2Ket):
 
-    if not isinstance(H, Qobj):
-        print("Matrix must be Qobj")
-        return 1
+    # if not isinstance(H, Qobj):
+    #     print("Matrix must be Qobj")
+    #     return 1
 
     amplitudes = []
 
@@ -44,9 +44,9 @@ def plotAmpEigenstatesZ2(H, z2Ket):
 
 def plotProbZ2Time(H, z2Ket):
 
-    if not isinstance(H, Qobj):
-        print("Matrix must be Qobj")
-        return 1
+    # if not isinstance(H, Qobj):
+    #     print("Matrix must be Qobj")
+    #     return 1
 
     amplitudes = []
 
