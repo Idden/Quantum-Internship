@@ -35,7 +35,7 @@ def plotAmpEigenstatesZ2(H, z2Ket):
     plt.figure()
     plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
     plt.yscale("log")
-    # plt.ylim(10**-5, 1)
+    plt.ylim(10**-5, 1)
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
     plt.title("Overlap of Z2 State and Eigenstates")
