@@ -19,7 +19,28 @@ def plotEigEnergies(H):
     plt.savefig("plots//eigEnergies.pdf")
     plt.show()
 
-def plotAmpEigenstatesZ2(H, z2Ket):
+def plotAmpEigenstatesZ2Lin(H, z2Ket):
+
+    # if not isinstance(H, Qobj):
+    #     print("Matrix must be Qobj")
+    #     return 1
+
+    amplitudes = []
+
+    eigenvalues, eigenstates = H.eigenstates()
+
+    for states in eigenstates:
+        amplitudes.append(z2Ket.dag() * states)
+
+    plt.figure()
+    plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
+    plt.xlabel("Eigenvalues")
+    plt.ylabel("Probability")
+    plt.title("Overlap of Z2 State and Eigenstates")
+    plt.savefig("plots//ampEigenstateZ2.pdf")
+    plt.show()
+
+def plotAmpEigenstatesZ2Log(H, z2Ket):
 
     # if not isinstance(H, Qobj):
     #     print("Matrix must be Qobj")
