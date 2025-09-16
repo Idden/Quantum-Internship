@@ -37,7 +37,7 @@ def plotAmpEigenstatesZ2Lin(H, z2Ket):
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
     plt.title("Overlap of Z2 State and Eigenstates")
-    plt.savefig("plots//ampEigenstateZ2.pdf")
+    plt.savefig("plots//ampEigenstateZ2Lin.pdf")
     plt.show()
 
 def plotAmpEigenstatesZ2Log(H, z2Ket):
@@ -60,7 +60,7 @@ def plotAmpEigenstatesZ2Log(H, z2Ket):
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
     plt.title("Overlap of Z2 State and Eigenstates")
-    plt.savefig("plots//ampEigenstateZ2.pdf")
+    plt.savefig("plots//ampEigenstateZ2Log.pdf")
     plt.show()
 
 def plotProbZ2Time(H, z2Ket):
