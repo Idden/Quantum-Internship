@@ -63,7 +63,7 @@ def plotAmpEigenstatesZ2Log(H, z2Ket):
     plt.savefig("plots//ampEigenstateZ2Log.pdf")
     plt.show()
 
-def plotProbZ2Time(H, z2Ket):
+def plotProbZ2Time(H, z2Ket, t=20):
 
     # if not isinstance(H, Qobj):
     #     print("Matrix must be Qobj")
@@ -71,7 +71,7 @@ def plotProbZ2Time(H, z2Ket):
 
     amplitudes = []
 
-    tlist = np.linspace(0, 20, 250)
+    tlist = np.linspace(0, t, t*25)
     psi_t = qt.sesolve(H, z2Ket, tlist)
 
     for states in psi_t.states:
