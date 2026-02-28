@@ -42,9 +42,11 @@ def binNoConsecOnesEfficient(N):
 def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
-# function for QobjEvo
+# drive functions
 def coeff(t, A, omega):
     return A * np.sin(omega * t)
+def const(t, A):
+    return A * t    
 
 def get_scar_ham(N):
     assert (N % 2 == 0), "N must be a multiple of 2"
