@@ -46,7 +46,11 @@ def z2_initial(N):
 def coeff(t, A, omega):
     return A * np.sin(omega * t)
 def const(t, A):
-    return A * t    
+    return A * t
+def timed_drive(t, A, omega, limit):
+    return (A if t < limit else 0) * np.sin(omega * t)
+def timed_const(t, A, limit):
+    return (A if t < limit else 0) * t
 
 def get_scar_ham(N):
     assert (N % 2 == 0), "N must be a multiple of 2"
@@ -189,7 +193,7 @@ def get_scar_ham(N):
     H1 = csr_matrix((diagH1, (rowH1, columnH1)), shape=[basisLen, basisLen])
     H1 = qt.Qobj(H1)
 
-    return H0, H1, eigenvalues, eigenstates, psi0
+    return H0, H1, eigenvalues, eigenstates, psi0, basisList
 
 def get_qubit_ham(N, wq=2.0):
     sigz = qt.sigmaz()
