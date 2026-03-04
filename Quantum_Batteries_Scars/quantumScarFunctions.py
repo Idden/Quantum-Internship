@@ -366,7 +366,9 @@ def get_qubit_ham(N, wq=2.0):
 
 def get_random_qubit_ham(N):
     np.random.seed(0)
-    wlist = np.random.rand(N)
+    wq = 1.0
+    d = 0.1
+    wlist = wq + d * (np.random.rand(N) - 0.5)
 
     sigz = qt.sigmaz()
     sigx = qt.sigmax()
@@ -391,4 +393,4 @@ def get_random_qubit_ham(N):
         d_ham = qt.tensor(tempEyeList)
         qH1 += d_ham
 
-    return qH0, qH1
+    return qH0, qH1, wq
