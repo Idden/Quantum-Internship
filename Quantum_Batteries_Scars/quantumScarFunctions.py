@@ -195,7 +195,7 @@ def get_scar_ham(N):
 
     return H0, H1, eigenvalues, eigenstates, psi0, basisList
 
-def get_random_scar_ham(N):
+def get_random_scar_ham(N, detuning=0.0):
     assert (N % 2 == 0), "N must be a multiple of 2"
 
     basisList = binNoConsecOnesEfficient(N)
@@ -283,6 +283,23 @@ def get_random_scar_ham(N):
             
         flippedList.clear()
 
+    # -------------------------------
+    #
+    # create anharmonic term
+    #
+    # -------------------------------
+
+    # disorder strength
+    d = detuning
+
+    # random diagonal with zero mean
+    diag_vals = np.random.uniform(-d, d, basisLen)
+    diag_vals -= np.mean(diag_vals)
+
+    diagLocation = list(range(basisLen))
+    H_anharm = csr_matrix((diag_vals, (diagLocation, diagLocation)), shape=(basisLen, basisLen))
+    H_anharm = qt.Qobj(H_anharm)
+
     # list of ones for the sparse matrix
     onesList = np.ones(len(rowBare), dtype=int)
 
@@ -290,13 +307,7 @@ def get_random_scar_ham(N):
     sparseBareHamiltonian = csr_matrix((onesList, (rowBare, columnBare)), shape=[basisLen, basisLen])
     sparseFactoredHamiltonian = csr_matrix((numList, (rowFactor, columnFactor)), shape=[basisLen, basisLen])
     H0 = (ohms / 2 * sparseBareHamiltonian) + (-0.026 * ohms * sparseFactoredHamiltonian)
-    H0 = qt.Qobj(H0)
-
-    # -------------------------------
-    #
-    # states and evolutions set ups
-    #
-    # -------------------------------
+    H0 = qt.Qobj(H0) + H_anharm
 
     # diagonalize the sparse matrix
     eigenvalues, eigenstates = H0.eigenstates()
@@ -364,11 +375,13 @@ def get_qubit_ham(N, wq=2.0):
 
     return qH0, qH1
 
-def get_random_qubit_ham(N):
+def get_random_qubit_ham(N, detuning=0.0):
     np.random.seed(0)
-    wq = 1.0
-    d = 0.1
-    wlist = wq + d * (np.random.rand(N) - 0.5)
+    wm = 1.0
+    d = detuning
+    diag_detune = np.random.uniform(-d, d, N**2)
+    diag_detune -= np.mean(diag_detune)
+    wlist = wm + diag_detune
 
     sigz = qt.sigmaz()
     sigx = qt.sigmax()
@@ -393,4 +406,6 @@ def get_random_qubit_ham(N):
         d_ham = qt.tensor(tempEyeList)
         qH1 += d_ham
 
-    return qH0, qH1, wq
+    return qH0, qH1, wm
+
+get_random_scar_ham(6, detuning=0.1)
