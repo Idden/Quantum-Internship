@@ -375,11 +375,10 @@ def get_qubit_ham(N, wq=2.0):
 
     return qH0, qH1
 
-def get_random_qubit_ham(N, detuning=0.0):
-    np.random.seed(0)
-    wm = 1.0
+def get_random_qubit_ham(N, detuning=0.0, wm=1.0):
+    # np.random.seed(0)
     d = detuning
-    diag_detune = np.random.uniform(-d, d, N**2)
+    diag_detune = np.random.uniform(-d, d, 2**N)
     diag_detune -= np.mean(diag_detune)
     wlist = wm + diag_detune
 
