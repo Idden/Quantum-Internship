@@ -51,6 +51,9 @@ def timed_drive(t, A, omega, limit):
     return (A if t < limit else 0) * np.sin(omega * t)
 def timed_const(t, A, limit):
     return (A if t < limit else 0) * t
+def make_coeff(r):
+    return lambda t, args: args["A"] * np.cos(args[f"wd{r}"] * t)
+
 
 def get_scar_ham(N):
     assert (N % 2 == 0), "N must be a multiple of 2"
