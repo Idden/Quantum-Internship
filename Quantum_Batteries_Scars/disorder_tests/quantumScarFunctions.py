@@ -199,6 +199,7 @@ def get_scar_ham(N):
     return H0, H1, eigenvalues, eigenstates, psi0, basisList
 
 def get_random_scar_ham(N, detuning=0.0):
+    np.random.seed(0)
     assert (N % 2 == 0), "N must be a multiple of 2"
 
     basisList = binNoConsecOnesEfficient(N)
@@ -294,14 +295,21 @@ def get_random_scar_ham(N, detuning=0.0):
 
     # disorder strength
     d = detuning
+    detune_list = []
 
     # random diagonal with zero mean
-    diag_vals = np.random.uniform(-d, d, basisLen)
-    diag_vals -= np.mean(diag_vals)
+    delta_w = np.random.uniform(-d, d, N)
+    delta_w -= np.mean(delta_w)
 
-    diagLocation = list(range(basisLen))
-    H_anharm = csr_matrix((diag_vals, (diagLocation, diagLocation)), shape=(basisLen, basisLen))
-    H_anharm = qt.Qobj(H_anharm)
+    intBasisList = []
+    for i in range(basisLen):
+        intBasisList.append(2 * np.array([int(k) for k in basisList[i]]) - 1)
+
+    for i in range(basisLen):
+        detune_list.append(np.dot(intBasisList[i], delta_w))
+
+    dgdgrow = list(range(basisLen))
+    deltaH = csr_matrix((detune_list, (dgdgrow, dgdgrow)), shape=[dgdgrow, dgdgrow])
 
     # list of ones for the sparse matrix
     onesList = np.ones(len(rowBare), dtype=int)
@@ -310,7 +318,7 @@ def get_random_scar_ham(N, detuning=0.0):
     sparseBareHamiltonian = csr_matrix((onesList, (rowBare, columnBare)), shape=[basisLen, basisLen])
     sparseFactoredHamiltonian = csr_matrix((numList, (rowFactor, columnFactor)), shape=[basisLen, basisLen])
     H0 = (ohms / 2 * sparseBareHamiltonian) + (-0.026 * ohms * sparseFactoredHamiltonian)
-    H0 = qt.Qobj(H0) + H_anharm
+    H0 = qt.Qobj(H0) + qt.Qobj(deltaH)
 
     # diagonalize the sparse matrix
     eigenvalues, eigenstates = H0.eigenstates()
@@ -669,3 +677,31 @@ def get_random_qubit_ham(N, detuning=0.0, wm=1.0):
 
     return qH0, qH1, wm
 
+def get_qubit_ham_x(N, detuning=0.0, wm=1.0):
+    np.random.seed(0)
+    d = detuning
+    diag_detune = np.random.uniform(-d, d, N)
+    diag_detune -= np.mean(diag_detune)
+
+    sigz = qt.sigmaz()
+    sigx = qt.sigmax()
+    eye = qt.qeye(2)
+
+    eyeList = [eye] * N
+
+    qH0 = 0
+    qH1 = 0
+
+    for i in range(N):
+        ops0 = eyeList.copy()
+        ops1 = eyeList.copy()
+
+        ops0[i] = -0.5 * wm * sigz + diag_detune[i] * sigx
+        ops1[i] = sigx
+
+        qH0 += qt.tensor(ops0)
+        qH1 += qt.tensor(ops1)
+
+    return qH0, qH1, wm
+
+get_random_scar_ham(4, detuning=0.1)
