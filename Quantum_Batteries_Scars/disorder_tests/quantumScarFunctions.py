@@ -627,34 +627,12 @@ def get_random_freq_scar_ham(N, d=0.0):
 
     return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
 
-def get_qubit_ham(N, wq=2.0):
-    sigz = qt.sigmaz()
-    sigx = qt.sigmax()
-    eye = qt.qeye(2)
-
-    eyeList = [eye] * N
-
-    qH0 = 0
-    qH1 = 0
-
-    for i in range(N):
-        ops0 = eyeList.copy()
-        ops1 = eyeList.copy()
-
-        ops0[i] = -0.5 * wq * sigz
-        ops1[i] = sigx
-
-        qH0 += qt.tensor(ops0)
-        qH1 += qt.tensor(ops1)
-
-    return qH0, qH1
-
-def get_random_qubit_ham(N, detuning=0.0, wm=1.0):
-    # np.random.seed(0)
-    d = detuning
-    diag_detune = np.random.uniform(-d, d, N)
-    diag_detune -= np.mean(diag_detune)
-    wlist = wm + diag_detune
+def get_qubit_ham(N, wm=1.0, disorder=False, detuning=0.0):
+    if disorder:
+        np.random.seed(0)
+        d = detuning
+        wlist = np.random.uniform(-d, d, N)
+        wlist -= np.mean(wlist)
 
     sigz = qt.sigmaz()
     sigx = qt.sigmax()
@@ -669,7 +647,9 @@ def get_random_qubit_ham(N, detuning=0.0, wm=1.0):
         ops0 = eyeList.copy()
         ops1 = eyeList.copy()
 
-        ops0[i] = -0.5 * wlist[i] * sigz
+        ops0[i] = -0.5 * wm * sigz
+        if disorder:
+            ops0[i] += wlist[i] * sigz
         ops1[i] = sigx
 
         qH0 += qt.tensor(ops0)
@@ -703,5 +683,3 @@ def get_qubit_ham_x(N, detuning=0.0, wm=1.0):
         qH1 += qt.tensor(ops1)
 
     return qH0, qH1, wm
-
-get_random_scar_ham(4, detuning=0.1)
