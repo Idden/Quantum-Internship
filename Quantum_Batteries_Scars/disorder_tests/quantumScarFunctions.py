@@ -416,3 +416,23 @@ def get_qubit_ham_x(N, detuning=0.0, wm=1.0):
         qH1 += qt.tensor(ops1)
 
     return qH0, qH1, wm
+
+def get_random_freq_qubit_ham(N, wm=1.0):
+    sigz = qt.sigmaz()
+    sigx = qt.sigmax()
+    eye = qt.qeye(2)
+
+    qH0 = 0
+    qH1_list = []
+
+    for i in range(N):
+        ops0 = [eye] * N
+        ops1 = [eye] * N
+
+        ops0[i] = -0.5 * wm * sigz
+        ops1[i] = sigx
+
+        qH0 += qt.tensor(ops0)
+        qH1_list.append(qt.tensor(ops1))
+
+    return qH0, qH1_list, wm
