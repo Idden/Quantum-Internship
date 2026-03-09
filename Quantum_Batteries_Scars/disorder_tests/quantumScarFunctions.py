@@ -204,7 +204,7 @@ def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning
     # -------------------------------
 
     # create H1 operator for QobjEvo!
-    copyBasis = basisList
+    copyBasis = basisList.copy()
     diagH1 = []
 
     if random_drive_strength:
