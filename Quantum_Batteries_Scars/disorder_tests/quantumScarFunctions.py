@@ -55,8 +55,9 @@ def make_coeff(r):
     return lambda t, args: args["A"] * np.cos(args[f"wd{r}"] * t)
 
 
-def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning=0.0, random_drive_strength=False):
+def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning=0.0, random_drive_strength=False, random_drive_freq=False):
     assert (N % 2 == 0), "N must be a multiple of 2"
+    assert (random_drive_strength == False or random_drive_freq == False), "Random drive strength and frequency cannot both be True"
 
     if not random_seed:
         np.random.seed(0)
@@ -203,35 +204,53 @@ def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning
     #
     # -------------------------------
 
-    # create H1 operator for QobjEvo!
-    copyBasis = basisList.copy()
-    diagH1 = []
-
-    if random_drive_strength:
-        driveWeights = np.random.uniform(-ds_detuning, ds_detuning, N)
-        driveWeights = 1.0 + driveWeights
-
-    # switches 0s to -1s and keeps 1s the same for the copyBasis
-    # appends to diagH1 the dot product between each bit string and the 0 -> -1 Z2 state
-    z2bitString = list(z2_initial(N))
-    z2bitString = 2 * np.array([int(i) for i in z2bitString]) - 1
-    for i in range(basisLen):
-
-        bitString = list(copyBasis[i])
-        bitString = [int(i) for i in bitString]
+    if not random_drive_freq:
+        # create H1 operator for QobjEvo!
+        copyBasis = basisList.copy()
+        diagH1 = []
 
         if random_drive_strength:
-            diagH1.append(np.dot(driveWeights * (2 * np.array(bitString) - 1), z2bitString))
-        else:
-            diagH1.append(np.dot(2 * np.array(bitString) - 1, z2bitString))
-    # rows and columns lists for diagonal positions in H1
-    diagLocationH1 = [i for i in range(basisLen)]
+            driveWeights = np.random.uniform(-ds_detuning, ds_detuning, N)
+            driveWeights = 1.0 + driveWeights
 
-    # creates sparse matrix with diagonals as diagH1 list
-    H1 = csr_matrix((diagH1, (diagLocationH1, diagLocationH1)), shape=[basisLen, basisLen])
-    H1 = qt.Qobj(H1)
+        # switches 0s to -1s and keeps 1s the same for the copyBasis
+        # appends to diagH1 the dot product between each bit string and the 0 -> -1 Z2 state
+        z2bitString = list(z2_initial(N))
+        z2bitString = 2 * np.array([int(i) for i in z2bitString]) - 1
+        
+        for i in range(basisLen):
 
-    return H0, H1, eigenvalues, eigenstates, psi0, basisList
+            bitString = list(copyBasis[i])
+            bitString = [int(i) for i in bitString]
+
+            if random_drive_strength:
+                diagH1.append(np.dot(driveWeights * (2 * np.array(bitString) - 1), z2bitString))
+            else:
+                diagH1.append(np.dot(2 * np.array(bitString) - 1, z2bitString))
+
+        # rows and columns lists for diagonal positions in H1
+        diagLocationH1 = [i for i in range(basisLen)]
+
+        # creates sparse matrix with diagonals as diagH1 list
+        H1 = csr_matrix((diagH1, (diagLocationH1, diagLocationH1)), shape=[basisLen, basisLen])
+        H1 = qt.Qobj(H1)
+    else:
+        # create H1_list operator
+        H1_list = []
+        z2bitString = 2 * np.array([int(b) for b in z2_initial(N)]) - 1
+        for r in range(N):
+            diagHr = []
+            for i in range(basisLen):
+                bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
+                diagHr.append(bitString[r] * z2bitString[r])
+
+            Hr = csr_matrix((diagHr, (range(basisLen), range(basisLen))), shape=(basisLen, basisLen))
+            H1_list.append(qt.Qobj(Hr))
+
+    if not random_drive_freq:
+        return H0, H1, eigenvalues, eigenstates, psi0, basisList
+    else:
+        return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
 
 def get_random_freq_scar_ham(N):
     assert (N % 2 == 0), "N must be a multiple of 2"
@@ -346,9 +365,7 @@ def get_random_freq_scar_ham(N):
 
     # create H1 operator for QobjEvo!
     H1_list = []
-
     z2bitString = 2 * np.array([int(b) for b in z2_initial(N)]) - 1
-
     for r in range(N):
         diagHr = []
         for i in range(basisLen):
