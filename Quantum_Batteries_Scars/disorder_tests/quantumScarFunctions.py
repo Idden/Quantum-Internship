@@ -233,7 +233,7 @@ def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning
 
     return H0, H1, eigenvalues, eigenstates, psi0, basisList
 
-def get_random_freq_scar_ham(N, d=0.0):
+def get_random_freq_scar_ham(N):
     assert (N % 2 == 0), "N must be a multiple of 2"
 
     basisList = binNoConsecOnesEfficient(N)
