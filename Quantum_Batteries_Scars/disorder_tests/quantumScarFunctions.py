@@ -55,7 +55,10 @@ def make_coeff(r):
     return lambda t, args: args["A"] * np.cos(args[f"wd{r}"] * t)
 
 
-def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning=0.0, random_drive_strength=False, random_drive_freq=False):
+def get_scar_ham(N, disorder=False, detuning=0.0, 
+                 random_seed=False, ds_detuning=0.0, 
+                 random_drive_strength=False, random_drive_freq=False,
+                 ohms=1.0):
     assert (N % 2 == 0), "N must be a multiple of 2"
     assert (random_drive_strength == False or random_drive_freq == False), "Random drive strength and frequency cannot both be True"
 
@@ -70,7 +73,6 @@ def get_scar_ham(N, disorder=False, detuning=0.0, random_seed=False, ds_detuning
     basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
     basisLen = len(basisList)
     flippedList = []
-    ohms = 1.0
 
     rowBare = []
     columnBare = []
@@ -432,7 +434,7 @@ def get_qubit_ham_x(N, detuning=0.0, wm=1.0):
         qH0 += qt.tensor(ops0)
         qH1 += qt.tensor(ops1)
 
-    return qH0, qH1, wm
+    return qH0, qH1
 
 def get_random_freq_qubit_ham(N, wm=1.0):
     sigz = qt.sigmaz()
@@ -452,4 +454,4 @@ def get_random_freq_qubit_ham(N, wm=1.0):
         qH0 += qt.tensor(ops0)
         qH1_list.append(qt.tensor(ops1))
 
-    return qH0, qH1_list, wm
+    return qH0, qH1_list
