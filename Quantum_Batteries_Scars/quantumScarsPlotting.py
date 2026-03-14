@@ -1,9 +1,12 @@
 import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from qutip import Qobj
 
-def plotEigEnergies(H):
+mpl.rcParams["font.size"] = 12
+
+def plotEigEnergies(H, N):
     
     # if not isinstance(H, Qobj):
     #     print("Matrix must be Qobj")
@@ -15,8 +18,7 @@ def plotEigEnergies(H):
     plt.plot(eigenvalues, ".")
     plt.xlabel("Eigenvalue")
     plt.ylabel("Energy")
-    plt.title("Energies of Eigenvalues")
-    plt.savefig("plots//eigEnergies.pdf")
+    plt.title(f"Energies of Eigenvalues N={N}")
     plt.show()
 
 def plotAmpEigenstatesZ2Lin(H, z2Ket):
@@ -40,7 +42,7 @@ def plotAmpEigenstatesZ2Lin(H, z2Ket):
     plt.savefig("plots//ampEigenstateZ2Lin.pdf")
     plt.show()
 
-def plotAmpEigenstatesZ2Log(H, z2Ket):
+def plotAmpEigenstatesZ2Log(H, z2Ket, N):
 
     # if not isinstance(H, Qobj):
     #     print("Matrix must be Qobj")
@@ -59,11 +61,10 @@ def plotAmpEigenstatesZ2Log(H, z2Ket):
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
     plt.ylim(10**-5, 1)
-    plt.title("Overlap of Z2 State and Eigenstates")
-    plt.savefig("plots//ampEigenstateZ2Log.pdf")
+    plt.title(f"Overlap of Z2 State and Eigenstates N={N}")
     plt.show()
 
-def plotProbZ2Time(H, z2Ket, t=20):
+def plotProbZ2Time(H, N, z2Ket, t=20):
 
     # if not isinstance(H, Qobj):
     #     print("Matrix must be Qobj")
@@ -81,6 +82,5 @@ def plotProbZ2Time(H, z2Ket, t=20):
     plt.plot(tlist, np.abs(amplitudes)**2)
     plt.xlabel("Time")
     plt.ylabel("Probability")
-    plt.title("Overlap of Z2 State with Itself Over Time")
-    plt.savefig("plots//ampTimeZ2.pdf")
+    plt.title(f"Overlap of Z2 State with Itself Over Time N={N}")
     plt.show()
