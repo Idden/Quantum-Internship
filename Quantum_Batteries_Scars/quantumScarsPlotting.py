@@ -15,31 +15,12 @@ def plotEigEnergies(H, N):
     eigenvalues = H.eigenenergies()
 
     plt.figure()
-    plt.plot(eigenvalues, ".")
+    plt.plot(eigenvalues, ".", ms=12)
+    plt.grid(True)
     plt.xlabel("Eigenvalue")
     plt.ylabel("Energy")
+    plt.grid(True, alpha=0.4)
     plt.title(f"Energies of Eigenvalues N={N}")
-    plt.show()
-
-def plotAmpEigenstatesZ2Lin(H, z2Ket):
-
-    # if not isinstance(H, Qobj):
-    #     print("Matrix must be Qobj")
-    #     return 1
-
-    amplitudes = []
-
-    eigenvalues, eigenstates = H.eigenstates()
-
-    for states in eigenstates:
-        amplitudes.append(z2Ket.dag() * states)
-
-    plt.figure()
-    plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
-    plt.xlabel("Eigenvalues")
-    plt.ylabel("Probability")
-    plt.title("Overlap of Z2 State and Eigenstates")
-    plt.savefig("plots//ampEigenstateZ2Lin.pdf")
     plt.show()
 
 def plotAmpEigenstatesZ2Log(H, z2Ket, N):
@@ -56,10 +37,11 @@ def plotAmpEigenstatesZ2Log(H, z2Ket, N):
         amplitudes.append(z2Ket.dag() * states)
 
     plt.figure()
-    plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".")
+    plt.plot(eigenvalues, np.abs(amplitudes) ** 2, ".", ms=12)
     plt.yscale("log")
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
+    plt.grid(True, alpha=0.4)
     plt.ylim(10**-5, 1)
     plt.title(f"Overlap of Z2 State and Eigenstates N={N}")
     plt.show()
@@ -80,6 +62,7 @@ def plotProbZ2Time(H, N, z2Ket, t=20):
 
     plt.figure()
     plt.plot(tlist, np.abs(amplitudes)**2)
+    plt.grid(True, alpha=0.4)
     plt.xlabel("Time")
     plt.ylabel("Probability")
     plt.title(f"Overlap of Z2 State with Itself Over Time N={N}")
