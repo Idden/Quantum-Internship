@@ -4,8 +4,8 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 
-from quantumScarsCheck import *
-from quantumScarsPlotting import *
+from Quantum_Batteries_Scars.disorder_tests.quantumScarsCheck import *
+from Quantum_Batteries_Scars.disorder_tests.quantumScarsPlotting import *
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
