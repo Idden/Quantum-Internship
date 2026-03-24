@@ -54,13 +54,67 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False):
+    if not random_seed:
+        np.random.seed(0)
 
-def get_scar_ham(N, ham_disorder=[0, 0, 0], 
-                 random_seed=False, ds_detuning=0, 
-                 random_drive_strength=False, random_drive_freq=False,
-                 ohms=1.0):
+    if ham_disorder[0] != 0.0:
+        zd = ham_disorder[0]
+        hz = np.random.uniform(-zd, zd, N)
+        hz -= np.mean(hz)
+
+    sigz = qt.sigmaz()
+    sigy = qt.sigmay()
+    sigx = qt.sigmax()
+    eye = qt.qeye(2)
+
+    eyeList = [eye] * N
+
+    qH0 = 0
+    qH1 = 0
+    qH1_list = []
+
+    for i in range(N):
+        ops0 = eyeList.copy()
+        ops1 = eyeList.copy()
+
+        ops0[i] = -0.5 * wm * sigz
+        ops1[i] = sigx
+
+        if ham_disorder[0] != 0.0:
+            zd = ham_disorder[0]
+            hz = np.random.uniform(-zd, zd, N)
+            hz -= np.mean(hz)
+            ops0[i] += hz[i] * sigz
+
+        if ham_disorder[1] != 0.0:
+            yd = ham_disorder[1]
+            hy = np.random.uniform(-yd, yd, N)
+            hy -= np.mean(hy)
+            ops0[i] += hy[i] * sigy
+
+        if ham_disorder[2] != 0.0:
+            xd = ham_disorder[2]
+            hx = np.random.uniform(-xd, xd, N)
+            hx -= np.mean(hx)
+            ops0[i] += hx[i] * sigx
+
+        qH0 += qt.tensor(ops0)
+
+        if not indv_qubits:
+            qH1 += qt.tensor(ops1)
+        else:
+            qH1_list.append(qt.tensor(ops1))
+
+    if not indv_qubits:
+        return qH0, qH1
+    else:
+        return qH0, qH1_list
+
+def get_scar_ham(N, ham_disorder=[0, 0, 0],
+                 random_seed=False, indv_qubit=False,
+                 ohms=1.0, ds_detuning=0):
     assert (N % 2 == 0), "N must be a multiple of 2"
-    assert (random_drive_strength == False or random_drive_freq == False), "Random drive strength and frequency cannot both be True"
     assert (len(ham_disorder) == 3), "ham_disorder must have 3 values [dz, dy, dx]"
 
     if not random_seed:
@@ -251,29 +305,21 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
     #
     # -------------------------------
 
-    if not random_drive_freq:
-        # create H1 operator for QobjEvo!
-        copyBasis = basisList.copy()
-        diagH1 = []
+    # drive strength disorder
+    driveWeights = np.random.uniform(-ds_detuning, ds_detuning, N)
+    driveWeights = 1.0 + driveWeights
 
-        if random_drive_strength:
-            driveWeights = np.random.uniform(-ds_detuning, ds_detuning, N)
-            driveWeights = 1.0 + driveWeights
+    if not indv_qubit:
+        # create H1 operator for QobjEvo!
+        diagH1 = []
 
         # switches 0s to -1s and keeps 1s the same for the copyBasis
         # appends to diagH1 the dot product between each bit string and the 0 -> -1 Z2 state
-        z2bitString = list(z2_initial(N))
-        z2bitString = 2 * np.array([int(i) for i in z2bitString]) - 1
+        z2bitString = 2 * np.array([int(i) for i in z2_initial(N)]) - 1
         
         for i in range(basisLen):
-
-            bitString = list(copyBasis[i])
-            bitString = [int(i) for i in bitString]
-
-            if random_drive_strength:
-                diagH1.append(np.dot(driveWeights * (2 * np.array(bitString) - 1), z2bitString))
-            else:
-                diagH1.append(np.dot(2 * np.array(bitString) - 1, z2bitString))
+            bitString = [int(i) for i in basisList[i]]
+            diagH1.append(np.dot(driveWeights * (2 * np.array(bitString) - 1), z2bitString))
 
         # rows and columns lists for diagonal positions in H1
         diagLocationH1 = [i for i in range(basisLen)]
@@ -285,85 +331,17 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
         # create H1_list operator
         H1_list = []
         z2bitString = 2 * np.array([int(b) for b in z2_initial(N)]) - 1
+        
         for r in range(N):
             diagHr = []
             for i in range(basisLen):
                 bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
-                diagHr.append(bitString[r] * z2bitString[r])
+                diagHr.append(driveWeights[r] * bitString[r] * z2bitString[r])
 
             Hr = csr_matrix((diagHr, (range(basisLen), range(basisLen))), shape=(basisLen, basisLen))
             H1_list.append(qt.Qobj(Hr))
 
-    if not random_drive_freq:
+    if not indv_qubit:
         return H0, H1, eigenvalues, eigenstates, psi0, basisList
     else:
         return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
-
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False):
-    if not random_seed:
-        np.random.seed(0)
-
-    if ham_disorder[0] != 0.0:
-        zd = ham_disorder[0]
-        hz = np.random.uniform(-zd, zd, N)
-        hz -= np.mean(hz)
-
-    sigz = qt.sigmaz()
-    sigy = qt.sigmay()
-    sigx = qt.sigmax()
-    eye = qt.qeye(2)
-
-    eyeList = [eye] * N
-
-    qH0 = 0
-    qH1 = 0
-
-    for i in range(N):
-        ops0 = eyeList.copy()
-        ops1 = eyeList.copy()
-
-        ops0[i] = -0.5 * wm * sigz
-        ops1[i] = sigx
-
-        if ham_disorder[0] != 0.0:
-            zd = ham_disorder[0]
-            hz = np.random.uniform(-zd, zd, N)
-            hz -= np.mean(hz)
-            ops0[i] += hz[i] * sigz
-
-        if ham_disorder[1] != 0.0:
-            yd = ham_disorder[1]
-            hy = np.random.uniform(-yd, yd, N)
-            hy -= np.mean(hy)
-            ops0[i] += hy[i] * sigy
-
-        if ham_disorder[2] != 0.0:
-            xd = ham_disorder[2]
-            hx = np.random.uniform(-xd, xd, N)
-            hx -= np.mean(hx)
-            ops0[i] += hx[i] * sigx
-
-        qH0 += qt.tensor(ops0)
-        qH1 += qt.tensor(ops1)
-
-    return qH0, qH1
-
-def get_random_freq_qubit_ham(N, wm=1.0):
-    sigz = qt.sigmaz()
-    sigx = qt.sigmax()
-    eye = qt.qeye(2)
-
-    qH0 = 0
-    qH1_list = []
-
-    for i in range(N):
-        ops0 = [eye] * N
-        ops1 = [eye] * N
-
-        ops0[i] = -0.5 * wm * sigz
-        ops1[i] = sigx
-
-        qH0 += qt.tensor(ops0)
-        qH1_list.append(qt.tensor(ops1))
-
-    return qH0, qH1_list
