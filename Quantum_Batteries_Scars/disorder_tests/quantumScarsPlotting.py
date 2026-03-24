@@ -3,14 +3,11 @@ import qutip as qt
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from qutip import Qobj
+from quantumScarFunctions import *
 
 mpl.rcParams["font.size"] = 12
 
 def plotEigEnergies(H, N):
-    
-    # if not isinstance(H, Qobj):
-    #     print("Matrix must be Qobj")
-    #     return 1
 
     eigenvalues = H.eigenenergies()
 
@@ -24,10 +21,6 @@ def plotEigEnergies(H, N):
     plt.show()
 
 def plotAmpEigenstatesZ2Log(H, z2Ket, N):
-
-    # if not isinstance(H, Qobj):
-    #     print("Matrix must be Qobj")
-    #     return 1
 
     amplitudes = []
 
@@ -48,10 +41,6 @@ def plotAmpEigenstatesZ2Log(H, z2Ket, N):
 
 def plotProbZ2Time(H, N, z2Ket, t=20):
 
-    # if not isinstance(H, Qobj):
-    #     print("Matrix must be Qobj")
-    #     return 1
-
     amplitudes = []
 
     tlist = np.linspace(0, t, t*25)
@@ -66,4 +55,38 @@ def plotProbZ2Time(H, N, z2Ket, t=20):
     plt.xlabel("Time")
     plt.ylabel("Probability")
     plt.title(f"Overlap of Z2 State with Itself Over Time N={N}")
+    plt.show()
+
+def Rtau_plot(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=100):
+    assert (freq_dis == 0 or indv_qubit == True), "freq_dis will do NOTHING when indv_qubit is false"
+    assert (len(args) == 2 or indv_qubit == True), "args must be len = 2 if indv_qubit = False"
+    assert (len(args) == 1 or indv_qubit == False), "args must be len = 1 if indv_qubit = True"
+
+    tlist = np.linspace(0, t, t * 2)
+    eigenvalues, eigenstates = H0.eigenstates()
+    bandwidth = eigenvalues[-1] - eigenvalues[0]
+
+    if not indv_qubit:
+        dw = np.random.uniform(-freq_dis, freq_dis, N)
+        omega_list = w + dw
+        H = qt.QobjEvo([H0, [H1, coeff]], args=args)
+        psi_t = qt.sesolve(H, eigenstates[0], tlist, e_ops=[H0])
+        Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
+    else:
+        dw = np.random.uniform(-freq_dis, freq_dis, N)
+        omega_list = w + dw
+        H = [H0]
+        for r in range(N):
+            args[f"wd{r}"] = omega_list[r]
+            H.append([H1[r], make_coeff(r)])
+
+        H = qt.QobjEvo(H, args=args)
+        psi_t = qt.sesolve(H, eigenstates[0], tlist, e_ops=[H0])
+        Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
+
+    plt.plot(tlist, Rtau_scar)
+    plt.xlabel("Time")
+    plt.ylabel("Rtau")
+    plt.title("Rtau vs. Time")
+    plt.ylim(0, 1)
     plt.show()
