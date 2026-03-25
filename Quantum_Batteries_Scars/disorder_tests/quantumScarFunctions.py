@@ -54,7 +54,7 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False):
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False, ds_dis=0.0):
     if not random_seed:
         np.random.seed(0)
 
@@ -62,6 +62,20 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
         zd = ham_disorder[0]
         hz = np.random.uniform(-zd, zd, N)
         hz -= np.mean(hz)
+
+    if ham_disorder[1] != 0.0:
+        yd = ham_disorder[1]
+        hy = np.random.uniform(-yd, yd, N)
+        hy -= np.mean(hy)
+
+    if ham_disorder[2] != 0.0:
+        xd = ham_disorder[2]
+        hx = np.random.uniform(-xd, xd, N)
+        hx -= np.mean(hx)
+
+    ds = np.random.uniform(-ds_dis, ds_dis, N)
+    ds -= np.mean(ds)
+    ds += 1.0
 
     sigz = qt.sigmaz()
     sigy = qt.sigmay()
@@ -79,24 +93,15 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
         ops1 = eyeList.copy()
 
         ops0[i] = -0.5 * wm * sigz
-        ops1[i] = sigx
+        ops1[i] = ds[i] * sigx
 
         if ham_disorder[0] != 0.0:
-            zd = ham_disorder[0]
-            hz = np.random.uniform(-zd, zd, N)
-            hz -= np.mean(hz)
             ops0[i] += hz[i] * sigz
 
         if ham_disorder[1] != 0.0:
-            yd = ham_disorder[1]
-            hy = np.random.uniform(-yd, yd, N)
-            hy -= np.mean(hy)
             ops0[i] += hy[i] * sigy
 
         if ham_disorder[2] != 0.0:
-            xd = ham_disorder[2]
-            hx = np.random.uniform(-xd, xd, N)
-            hx -= np.mean(hx)
             ops0[i] += hx[i] * sigx
 
         qH0 += qt.tensor(ops0)
@@ -113,7 +118,7 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
 
 def get_scar_ham(N, ham_disorder=[0, 0, 0],
                  random_seed=False, indv_qubit=False,
-                 ohms=1.0, ds_detuning=0):
+                 ohms=1.0, ds_dis=0):
     assert (N % 2 == 0), "N must be a multiple of 2"
     assert (len(ham_disorder) == 3), "ham_disorder must have 3 values [dz, dy, dx]"
 
@@ -306,7 +311,7 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
     # -------------------------------
 
     # drive strength disorder
-    driveWeights = np.random.uniform(-ds_detuning, ds_detuning, N)
+    driveWeights = np.random.uniform(-ds_dis, ds_dis, N)
     driveWeights = 1.0 + driveWeights
 
     if not indv_qubit:
