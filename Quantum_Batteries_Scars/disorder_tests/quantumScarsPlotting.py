@@ -67,8 +67,6 @@ def Rtau_plot(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=10
     bandwidth = eigenvalues[-1] - eigenvalues[0]
 
     if not indv_qubit:
-        dw = np.random.uniform(-freq_dis, freq_dis, N)
-        omega_list = w + dw
         H = qt.QobjEvo([H0, [H1, coeff]], args=args)
         psi_t = qt.sesolve(H, eigenstates[0], tlist, e_ops=[H0])
         Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
