@@ -2,6 +2,7 @@ import math
 import numpy as np
 from scipy.sparse import csr_matrix
 import qutip as qt
+import matplotlib.pyplot as plt
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -41,6 +42,66 @@ def binNoConsecOnesEfficient(N):
 # creates z2 state
 def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
+
+def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, plot_scars=False):
+    eigenvalues, eigenstates = H0.eigenstates()
+
+    # find scar indices using overlaps
+    sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
+    scarIndices = []
+
+    for i in range(len(sections) - 1):
+
+        eigenSection = []
+
+        for k in range(len(eigenvalues)):
+            if (eigenvalues[k] > sections[i]) and (eigenvalues[k] < sections[i+1]):
+                eigenSection.append(k)
+
+        highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[0]]) ** 2
+        highestOverlapIndex = eigenSection[0]
+
+        if len(eigenSection) == 1:
+            scarIndices.append(eigenSection[0])
+            continue
+            
+        for m in range(1, len(eigenSection)):
+            if np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2 > highestOverlap:
+                highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2
+                highestOverlapIndex = eigenSection[m]
+        
+        scarIndices.append(highestOverlapIndex)
+
+    amplitudes = []
+    eigenvalueIndices = []
+
+    for i in scarIndices:
+        amplitudes.append(psi0.dag() * eigenstates[i])
+        eigenvalueIndices.append(eigenvalues[i])
+
+    if plot_scars:
+        print(scarIndices)
+        plt.plot(eigenvalueIndices, np.abs(amplitudes) ** 2, ".")
+        plt.yscale("log")
+        plt.ylim(10**-5, 1)
+        plt.xlabel("Eigenvalues")
+        plt.ylabel("Probability")
+        plt.title("Overlap of Z2 State and Scar States")
+        plt.show()
+
+    scarProbs = []
+    for states in psi_t.states:
+        temp = 0
+        for scars in scarIndices:
+            temp += np.abs(eigenstates[scars].dag() * states)**2
+        scarProbs.append(temp)
+
+    plt.plot(tlist, scarProbs)
+    plt.ylim(0, 1.05)
+    plt.xlabel("Time")
+    plt.ylabel("Total Scar Probability")
+    plt.title("Overlap of Psi_t and Scar States")
+    plt.show()
 
 # drive functions
 def coeff(t, A, omega):
@@ -266,7 +327,7 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
         H0 = H0 + Hy
 
     if ham_disorder[2] != 0.0:
-        xd = ham_disorder[1]
+        xd = ham_disorder[2]
         hx = np.random.uniform(-xd, xd, N)
         hx -= np.mean(hx)
 
