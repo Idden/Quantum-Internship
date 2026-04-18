@@ -43,68 +43,6 @@ def binNoConsecOnesEfficient(N):
 def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
-def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, disorder=[0, 0, 0], plot_scars=False):
-    eigenvalues, eigenstates = H0.eigenstates()
-
-    # find scar indices using overlaps
-    sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
-    scarIndices = []
-
-    for i in range(len(sections) - 1):
-
-        eigenSection = []
-
-        for k in range(len(eigenvalues)):
-            if (eigenvalues[k] > sections[i]) and (eigenvalues[k] < sections[i+1]):
-                eigenSection.append(k)
-
-        highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[0]]) ** 2
-        highestOverlapIndex = eigenSection[0]
-
-        if len(eigenSection) == 1:
-            scarIndices.append(eigenSection[0])
-            continue
-            
-        for m in range(1, len(eigenSection)):
-            if np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2 > highestOverlap:
-                highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2
-                highestOverlapIndex = eigenSection[m]
-        
-        scarIndices.append(highestOverlapIndex)
-
-    amplitudes = []
-    eigenvalueIndices = []
-
-    for i in scarIndices:
-        amplitudes.append(psi0.dag() * eigenstates[i])
-        eigenvalueIndices.append(eigenvalues[i])
-
-    if plot_scars:
-        print(scarIndices)
-        plt.plot(eigenvalueIndices, np.abs(amplitudes) ** 2, ".")
-        plt.yscale("log")
-        plt.ylim(10**-5, 1)
-        plt.xlabel("Eigenvalues")
-        plt.ylabel("Probability")
-        plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
-        plt.show()
-
-    scarProbs = []
-    for states in psi_t.states:
-        temp = 0
-        for scars in scarIndices:
-            temp += np.abs(eigenstates[scars].dag() * states)**2
-        scarProbs.append(temp)
-
-    plt.plot(tlist, scarProbs)
-    plt.ylim(0, 1.05)
-    plt.xlabel("Time")
-    plt.ylabel("Total Scar Probability")
-    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
-    plt.show()
-
-    # return 
-
 def embed_scar_state_to_full(state, basisList, N):
     vec_constrained = state.full().flatten()
     vec_full = np.zeros(2**N, dtype=complex)
@@ -447,3 +385,74 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
         return H0, H1, eigenvalues, eigenstates, psi0, basisList
     else:
         return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
+    
+def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, reals=10, args=None):
+
+    H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=[0,0,0], random_seed=False)
+
+    # find scar indices using overlaps
+    sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
+    scarIndices = []
+
+    for i in range(len(sections) - 1):
+
+        eigenSection = []
+
+        for k in range(len(eigenvalues)):
+            if (eigenvalues[k] > sections[i]) and (eigenvalues[k] < sections[i+1]):
+                eigenSection.append(k)
+
+        highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[0]]) ** 2
+        highestOverlapIndex = eigenSection[0]
+
+        if len(eigenSection) == 1:
+            scarIndices.append(eigenSection[0])
+            continue
+            
+        for m in range(1, len(eigenSection)):
+            if np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2 > highestOverlap:
+                highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2
+                highestOverlapIndex = eigenSection[m]
+        
+        scarIndices.append(highestOverlapIndex)
+
+    amplitudes = []
+    eigenvalueIndices = []
+
+    for i in scarIndices:
+        amplitudes.append(psi0.dag() * eigenstates[i])
+        eigenvalueIndices.append(eigenvalues[i])
+
+    if plot_scars:
+        print(scarIndices)
+        plt.plot(eigenvalueIndices, np.abs(amplitudes) ** 2, ".")
+        plt.yscale("log")
+        plt.ylim(10**-5, 1)
+        plt.xlabel("Eigenvalues")
+        plt.ylabel("Probability")
+        plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
+        plt.show()
+
+    totalScarProbs = np.zeros(len(tlist))
+    for _ in range(reals):
+        H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=disorder, random_seed=True)
+        H = qt.QobjEvo([H0, [H1, coeff]], args=args)
+        psi_t = qt.sesolve(H, eigenstates[0], tlist)
+
+        scarProbs = []
+        for states in psi_t.states:
+            temp = 0
+            for scars in scarIndices:
+                temp += np.abs(eigenstates[scars].dag() * states)**2
+            scarProbs.append(temp)
+        totalScarProbs += scarProbs
+    totalScarProbs = totalScarProbs / reals
+
+    plt.plot(tlist, totalScarProbs)
+    plt.ylim(0, 1.05)
+    plt.xlabel("Time")
+    plt.ylabel("Total Scar Probability")
+    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
+    plt.show()
+
+    return scarIndices
