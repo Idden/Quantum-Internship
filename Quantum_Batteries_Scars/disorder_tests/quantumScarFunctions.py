@@ -43,7 +43,7 @@ def binNoConsecOnesEfficient(N):
 def z2_initial(N):
     return ''.join('1' if i % 2 == 0 else '0' for i in range(N))
 
-def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, plot_scars=False):
+def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, disorder=[0, 0, 0], plot_scars=False):
     eigenvalues, eigenstates = H0.eigenstates()
 
     # find scar indices using overlaps
@@ -86,7 +86,7 @@ def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, plot_scars=False):
         plt.ylim(10**-5, 1)
         plt.xlabel("Eigenvalues")
         plt.ylabel("Probability")
-        plt.title("Overlap of Z2 State and Scar States")
+        plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
         plt.show()
 
     scarProbs = []
@@ -100,7 +100,43 @@ def giveMeScarOverlap(H0, N, psi0, psi_t, tlist, plot_scars=False):
     plt.ylim(0, 1.05)
     plt.xlabel("Time")
     plt.ylabel("Total Scar Probability")
-    plt.title("Overlap of Psi_t and Scar States")
+    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
+    plt.show()
+
+    # return 
+
+def embed_scar_state_to_full(state, basisList, N):
+    vec_constrained = state.full().flatten()
+    vec_full = np.zeros(2**N, dtype=complex)
+
+    for i, bitstr in enumerate(basisList):
+        full_index = int(bitstr, 2)
+        vec_full[full_index] = vec_constrained[i]
+
+    return qt.Qobj(vec_full, dims=[[2]*N, [1]*N])
+
+def giveMeVonNeumannEntrop(N, wd, tlist, disorder=[0, 0, 0], reals=50):
+    scarEntangle = []
+    for _ in range(reals):
+        H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=disorder, random_seed=True)
+        args = {"A": 0.1, "omega": wd}
+        H = qt.QobjEvo([H0, [H1, coeff]], args=args)
+        psi_t = qt.sesolve(H, eigenstates[0], tlist)
+
+        temp = []
+        for state in psi_t.states:
+            psi_full = embed_scar_state_to_full(state, basisList, N)
+            rho_A = psi_full.ptrace(list(range(N//2)))
+            temp.append(qt.entropy_vn(rho_A))
+        scarEntangle.append(temp)
+
+    scarEntangle = np.array(scarEntangle)
+    plotScar = np.mean(scarEntangle, axis=0)
+
+    plt.plot(tlist, plotScar)
+    plt.title(f"Avged Thingamabob w/ {N} Qubits and {disorder} Disorder")
+    plt.ylabel("Von Neumann Entropy")
+    plt.xlabel("Time")
     plt.show()
 
 # drive functions
