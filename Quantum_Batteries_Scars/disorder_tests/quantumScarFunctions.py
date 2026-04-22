@@ -89,24 +89,32 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False, ds_dis=0.0):
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False, ds_dis=0.0, N_dis=None):
+    assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
+
+    if N_dis == None:
+        N_dis = N
+
     if not random_seed:
         np.random.seed(0)
 
     if ham_disorder[0] != 0.0:
         zd = ham_disorder[0]
-        hz = np.random.uniform(-zd, zd, N)
-        hz -= np.mean(hz)
+        hz = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
 
     if ham_disorder[1] != 0.0:
         yd = ham_disorder[1]
-        hy = np.random.uniform(-yd, yd, N)
-        hy -= np.mean(hy)
+        hy = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
 
     if ham_disorder[2] != 0.0:
         xd = ham_disorder[2]
-        hx = np.random.uniform(-xd, xd, N)
-        hx -= np.mean(hx)
+        hx = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
 
     ds = np.random.uniform(-ds_dis, ds_dis, N)
     ds -= np.mean(ds)
@@ -153,9 +161,12 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
 
 def get_scar_ham(N, ham_disorder=[0, 0, 0],
                  random_seed=False, indv_qubit=False,
-                 ohms=1.0, ds_dis=0):
+                 ohms=1.0, ds_dis=0, N_dis=None):
     assert (N % 2 == 0), "N must be a multiple of 2"
     assert (len(ham_disorder) == 3), "ham_disorder must have 3 values [dz, dy, dx]"
+
+    if N_dis == None:
+        N_dis = N
 
     if not random_seed:
         np.random.seed(0)
@@ -254,15 +265,16 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
 
     # -------------------------------
     #
-    # create anharmonic term
+    # create disorder term
     #
     # -------------------------------
     if ham_disorder[0] != 0.0:
         zd = ham_disorder[0]
         dataZ = []
 
-        hz = np.random.uniform(-zd, zd, N)
-        hz -= np.mean(hz)
+        hz = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
 
         intBasisList = []
         for i in range(basisLen):
@@ -277,8 +289,9 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
     
     if ham_disorder[1] != 0.0:
         yd = ham_disorder[1]
-        hy = np.random.uniform(-yd, yd, N)
-        hy -= np.mean(hy)
+        hy = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
 
         rowY, colY, dataY = [], [], []
 
@@ -302,8 +315,9 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
 
     if ham_disorder[2] != 0.0:
         xd = ham_disorder[2]
-        hx = np.random.uniform(-xd, xd, N)
-        hx -= np.mean(hx)
+        hx = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
 
         rowX, colX, dataX = [], [], []
 
