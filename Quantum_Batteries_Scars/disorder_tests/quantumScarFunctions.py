@@ -89,7 +89,7 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubits=False, ds_dis=0.0, N_dis=None):
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=True):
     assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
 
     if N_dis == None:
@@ -135,8 +135,12 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
         ops0 = eyeList.copy()
         ops1 = eyeList.copy()
 
-        ops0[i] = -0.5 * wm * sigz
-        ops1[i] = ds[i] * sigx
+        if sigz_ham:
+            ops0[i] = -0.5 * wm * sigz
+            ops1[i] = ds[i] * sigx
+        else:
+            ops0[i] = -0.5 * wm * sigx
+            ops1[i] = ds[i] * sigz
 
         if ham_disorder[0] != 0.0:
             ops0[i] += hz[i] * sigz
@@ -149,15 +153,17 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
 
         qH0 += qt.tensor(ops0)
 
-        if not indv_qubits:
+        if not indv_qubit:
             qH1 += qt.tensor(ops1)
         else:
             qH1_list.append(qt.tensor(ops1))
 
-    if not indv_qubits:
-        return qH0, qH1
+    eigenvalues, eigenstates = qH0.eigenstates()
+
+    if not indv_qubit:
+        return qH0, qH1, eigenvalues, eigenstates
     else:
-        return qH0, qH1_list
+        return qH0, qH1_list, eigenvalues, eigenstates
 
 def get_scar_ham(N, ham_disorder=[0, 0, 0],
                  random_seed=False, indv_qubit=False,
