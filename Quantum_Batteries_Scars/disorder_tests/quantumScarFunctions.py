@@ -53,7 +53,7 @@ def embed_scar_state_to_full(state, basisList, N):
 
     return qt.Qobj(vec_full, dims=[[2]*N, [1]*N])
 
-def giveMeVonNeumannEntrop(N, wd, tlist, disorder=[0, 0, 0], reals=50):
+def giveMeScarVonNeumannEntrop(N, wd, tlist, disorder=[0, 0, 0], reals=50):
     scarEntangle = []
     for _ in range(reals):
         H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=disorder, random_seed=True)
