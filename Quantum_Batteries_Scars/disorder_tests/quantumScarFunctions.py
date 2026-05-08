@@ -89,13 +89,15 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=True):
+
+
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], fixed_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=False):
     assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
 
     if N_dis == None:
         N_dis = N
 
-    if not random_seed:
+    if fixed_seed:
         np.random.seed(0)
 
     if ham_disorder[0] != 0.0:
@@ -117,7 +119,6 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
         hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
 
     ds = np.random.uniform(-ds_dis, ds_dis, N)
-    ds -= np.mean(ds)
     ds += 1.0
 
     sigz = qt.sigmaz()
@@ -165,16 +166,10 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], random_seed=False, indv_qub
     else:
         return qH0, qH1_list, eigenvalues, eigenstates
 
-def get_scar_ham(N, ham_disorder=[0, 0, 0],
-                 random_seed=False, indv_qubit=False,
-                 ohms=1.0, ds_dis=0, N_dis=None):
+def get_scar_ham(N, fixed_seed=False, indv_qubit=False, ohms=1.0, ds_dis=0):
     assert (N % 2 == 0), "N must be a multiple of 2"
-    assert (len(ham_disorder) == 3), "ham_disorder must have 3 values [dz, dy, dx]"
 
-    if N_dis == None:
-        N_dis = N
-
-    if not random_seed:
+    if fixed_seed:
         np.random.seed(0)
 
     basisList = binNoConsecOnesEfficient(N)
@@ -268,81 +263,6 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
     sparseBareHamiltonian = csr_matrix((onesList, (rowBare, columnBare)), shape=[basisLen, basisLen])
     sparseFactoredHamiltonian = csr_matrix((numList, (rowFactor, columnFactor)), shape=[basisLen, basisLen])
     H0 = (ohms / 2 * sparseBareHamiltonian) + (-0.026 * ohms * sparseFactoredHamiltonian)
-
-    # -------------------------------
-    #
-    # create disorder term
-    #
-    # -------------------------------
-    if ham_disorder[0] != 0.0:
-        zd = ham_disorder[0]
-        dataZ = []
-
-        hz = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
-
-        intBasisList = []
-        for i in range(basisLen):
-            intBasisList.append(2 * np.array([int(k) for k in basisList[i]]) - 1)
-
-        for i in range(basisLen):
-            dataZ.append(np.dot(intBasisList[i], hz))
-
-        pert_location = list(range(basisLen))
-        Hz = csr_matrix((dataZ, (pert_location, pert_location)), shape=[basisLen, basisLen])
-        H0 = H0 + Hz
-    
-    if ham_disorder[1] != 0.0:
-        yd = ham_disorder[1]
-        hy = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
-
-        rowY, colY, dataY = [], [], []
-
-        for i, s in enumerate(basisList):
-            s_list = list(s)
-            for r in range(N):
-                flipped = s_list.copy()
-                flipped[r] = '1' if s[r] == '0' else '0'
-                flipped_str = ''.join(flipped)
-
-                if flipped_str in basisMap:
-                    j = basisMap[flipped_str]
-
-                    phase = 1j if s[r] == '0' else -1j
-                    rowY.append(j)
-                    colY.append(i)
-                    dataY.append(hy[r] * phase)
-
-        Hy = csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen))
-        H0 = H0 + Hy
-
-    if ham_disorder[2] != 0.0:
-        xd = ham_disorder[2]
-        hx = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
-
-        rowX, colX, dataX = [], [], []
-
-        for i, s in enumerate(basisList):
-            s_list = list(s)
-            for r in range(N):
-                flipped = s_list.copy()
-                flipped[r] = '1' if s[r] == '0' else '0'
-                flipped_str = ''.join(flipped)
-
-                if flipped_str in basisMap:
-                    j = basisMap[flipped_str]
-                    rowX.append(j)
-                    colX.append(i)
-                    dataX.append(hx[r])
-
-        Hx = csr_matrix((dataX, (rowX, colX)), shape=(basisLen, basisLen))
-        H0 = H0 + Hx
-
     H0 = qt.Qobj(H0)
 
     # -------------------------------
@@ -406,73 +326,191 @@ def get_scar_ham(N, ham_disorder=[0, 0, 0],
     else:
         return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
     
-def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, reals=10, args=None):
 
-    H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=[0,0,0], random_seed=False)
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], fixed_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=False):
+    assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
 
-    # find scar indices using overlaps
-    sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
-    scarIndices = []
+    if N_dis == None:
+        N_dis = N
 
-    for i in range(len(sections) - 1):
+    if fixed_seed:
+        np.random.seed(0)
 
-        eigenSection = []
+    ds = np.random.uniform(-ds_dis, ds_dis, N)
+    ds += 1.0
 
-        for k in range(len(eigenvalues)):
-            if (eigenvalues[k] > sections[i]) and (eigenvalues[k] < sections[i+1]):
-                eigenSection.append(k)
+    sigz = qt.sigmaz()
+    sigy = qt.sigmay()
+    sigx = qt.sigmax()
+    eye = qt.qeye(2)
 
-        highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[0]]) ** 2
-        highestOverlapIndex = eigenSection[0]
+    eyeList = [eye] * N
 
-        if len(eigenSection) == 1:
-            scarIndices.append(eigenSection[0])
-            continue
-            
-        for m in range(1, len(eigenSection)):
-            if np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2 > highestOverlap:
-                highestOverlap = np.abs(psi0.dag() * eigenstates[eigenSection[m]]) ** 2
-                highestOverlapIndex = eigenSection[m]
+    qH0 = 0
+    qH1 = 0
+    qH1_list = []
+
+    for i in range(N):
+        ops0 = eyeList.copy()
+        ops1 = eyeList.copy()
+
+        if sigz_ham:
+            ops0[i] = -0.5 * wm * sigz
+            ops1[i] = ds[i] * sigx
+        else:
+            ops0[i] = -0.5 * wm * sigx
+            ops1[i] = ds[i] * sigz
+
+        qH0 += qt.tensor(ops0)
+
+        if not indv_qubit:
+            qH1 += qt.tensor(ops1)
+        else:
+            qH1_list.append(qt.tensor(ops1))
+
+    eigenvalues, eigenstates = qH0.eigenstates()
+
+    if not indv_qubit:
+        return qH0, qH1, eigenvalues, eigenstates
+    else:
+        return qH0, qH1_list, eigenvalues, eigenstates
+
+
+def getDisorderedScarHam(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
+    if fixed_seed:
+        np.random.seed(0)
+
+    if N_dis == None:
+        N_dis = N
+
+    basisLen = len(basisList)
+    basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
+
+    if ham_disorder[0] != 0.0:
+        zd = ham_disorder[0]
+        dataZ = []
+
+        hz = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
+        print(hz)
+
+        intBasisList = []
+        for i in range(basisLen):
+            intBasisList.append(2 * np.array([int(k) for k in basisList[i]]) - 1)
+
+        for i in range(basisLen):
+            dataZ.append(np.dot(intBasisList[i], hz))
+
+        pert_location = list(range(basisLen))
+        Hz = qt.Qobj(csr_matrix((dataZ, (pert_location, pert_location)), shape=[basisLen, basisLen]))
+        H0_dis = H0_dis + Hz
+    
+    if ham_disorder[1] != 0.0:
+        yd = ham_disorder[1]
+        hy = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
+
+        rowY, colY, dataY = [], [], []
+
+        for i, s in enumerate(basisList):
+            s_list = list(s)
+            for r in range(N):
+                flipped = s_list.copy()
+                flipped[r] = '1' if s[r] == '0' else '0'
+                flipped_str = ''.join(flipped)
+
+                if flipped_str in basisMap:
+                    j = basisMap[flipped_str]
+
+                    phase = 1j if s[r] == '0' else -1j
+                    rowY.append(j)
+                    colY.append(i)
+                    dataY.append(hy[r] * phase)
+
+        Hy = qt.Qobj(csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen)))
+        H0_dis = H0_dis + Hy
+
+    if ham_disorder[2] != 0.0:
+        xd = ham_disorder[2]
+        hx = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
+
+        rowX, colX, dataX = [], [], []
+
+        for i, s in enumerate(basisList):
+            s_list = list(s)
+            for r in range(N):
+                flipped = s_list.copy()
+                flipped[r] = '1' if s[r] == '0' else '0'
+                flipped_str = ''.join(flipped)
+
+                if flipped_str in basisMap:
+                    j = basisMap[flipped_str]
+                    rowX.append(j)
+                    colX.append(i)
+                    dataX.append(hx[r])
+
+        Hx = qt.Qobj(csr_matrix((dataX, (rowX, colX)), shape=(basisLen, basisLen)))
+        H0_dis = H0_dis + Hx
+
+    H0_dis = qt.Qobj(H0_dis)
+    eigenvalues, eigenstates = H0_dis.eigenstates()
+
+    return H0_dis, eigenvalues, eigenstates
+
+def getDisorderedQubitHam(qH0_dis, N, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
+    if N_dis == None:
+        N_dis = N
+
+    if fixed_seed:
+        np.random.seed(0)
+
+    if ham_disorder[0] != 0.0:
+        zd = ham_disorder[0]
+        hz = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
+
+    if ham_disorder[1] != 0.0:
+        yd = ham_disorder[1]
+        hy = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
+
+    if ham_disorder[2] != 0.0:
+        xd = ham_disorder[2]
+        hx = np.zeros(N)
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
+
+    sigz = qt.sigmaz()
+    sigy = qt.sigmay()
+    sigx = qt.sigmax()
+    eye = qt.qeye(2)
+
+    eyeList = [eye] * N
+
+    ham_dis = qt.Qobj(np.zeros((2**N, 2**N)), dims=[[2]*N, [2]*N])
+
+    for i in range(N):
+        ops0 = eyeList.copy()
+
+        if ham_disorder[0] != 0.0:
+            ops0[i] = hz[i] * sigz
+
+        if ham_disorder[1] != 0.0:
+            ops0[i] = hy[i] * sigy
+
+        if ham_disorder[2] != 0.0:
+            ops0[i] = hx[i] * sigx
         
-        scarIndices.append(highestOverlapIndex)
+        ham_dis += qt.tensor(ops0)
 
-    amplitudes = []
-    eigenvalueIndices = []
+    qH0_dis += ham_dis
 
-    for i in scarIndices:
-        amplitudes.append(psi0.dag() * eigenstates[i])
-        eigenvalueIndices.append(eigenvalues[i])
+    qeigenvalues, qeigenstates = qH0_dis.eigenstates()
 
-    if plot_scars:
-        print(scarIndices)
-        plt.plot(eigenvalueIndices, np.abs(amplitudes) ** 2, ".")
-        plt.yscale("log")
-        plt.ylim(10**-5, 1)
-        plt.xlabel("Eigenvalues")
-        plt.ylabel("Probability")
-        plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
-        plt.show()
-
-    totalScarProbs = np.zeros(len(tlist))
-    for _ in range(reals):
-        H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=disorder, random_seed=True)
-        H = qt.QobjEvo([H0, [H1, coeff]], args=args)
-        psi_t = qt.sesolve(H, eigenstates[0], tlist)
-
-        scarProbs = []
-        for states in psi_t.states:
-            temp = 0
-            for scars in scarIndices:
-                temp += np.abs(eigenstates[scars].dag() * states)**2
-            scarProbs.append(temp)
-        totalScarProbs += scarProbs
-    totalScarProbs = totalScarProbs / reals
-
-    plt.plot(tlist, totalScarProbs)
-    plt.ylim(0, 1.05)
-    plt.xlabel("Time")
-    plt.ylabel("Total Scar Probability")
-    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
-    plt.show()
-
-    return scarIndices
+    return qH0_dis, qeigenvalues, qeigenstates
