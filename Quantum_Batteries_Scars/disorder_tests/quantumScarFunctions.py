@@ -90,82 +90,6 @@ def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
 
-
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], fixed_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=False):
-    assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
-
-    if N_dis == None:
-        N_dis = N
-
-    if fixed_seed:
-        np.random.seed(0)
-
-    if ham_disorder[0] != 0.0:
-        zd = ham_disorder[0]
-        hz = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
-
-    if ham_disorder[1] != 0.0:
-        yd = ham_disorder[1]
-        hy = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hy[dis_sites] = np.random.uniform(-yd, yd, N_dis)
-
-    if ham_disorder[2] != 0.0:
-        xd = ham_disorder[2]
-        hx = np.zeros(N)
-        dis_sites = np.random.choice(N, size=N_dis, replace=False)
-        hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
-
-    ds = np.random.uniform(-ds_dis, ds_dis, N)
-    ds += 1.0
-
-    sigz = qt.sigmaz()
-    sigy = qt.sigmay()
-    sigx = qt.sigmax()
-    eye = qt.qeye(2)
-
-    eyeList = [eye] * N
-
-    qH0 = 0
-    qH1 = 0
-    qH1_list = []
-
-    for i in range(N):
-        ops0 = eyeList.copy()
-        ops1 = eyeList.copy()
-
-        if sigz_ham:
-            ops0[i] = -0.5 * wm * sigz
-            ops1[i] = ds[i] * sigx
-        else:
-            ops0[i] = -0.5 * wm * sigx
-            ops1[i] = ds[i] * sigz
-
-        if ham_disorder[0] != 0.0:
-            ops0[i] += hz[i] * sigz
-
-        if ham_disorder[1] != 0.0:
-            ops0[i] += hy[i] * sigy
-
-        if ham_disorder[2] != 0.0:
-            ops0[i] += hx[i] * sigx
-
-        qH0 += qt.tensor(ops0)
-
-        if not indv_qubit:
-            qH1 += qt.tensor(ops1)
-        else:
-            qH1_list.append(qt.tensor(ops1))
-
-    eigenvalues, eigenstates = qH0.eigenstates()
-
-    if not indv_qubit:
-        return qH0, qH1, eigenvalues, eigenstates
-    else:
-        return qH0, qH1_list, eigenvalues, eigenstates
-
 def get_scar_ham(N, fixed_seed=False, indv_qubit=False, ohms=1.0, ds_dis=0):
     assert (N % 2 == 0), "N must be a multiple of 2"
 
@@ -327,12 +251,7 @@ def get_scar_ham(N, fixed_seed=False, indv_qubit=False, ohms=1.0, ds_dis=0):
         return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
     
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], fixed_seed=False, indv_qubit=False, ds_dis=0.0, N_dis=None, sigz_ham=False):
-    assert len(ham_disorder) == 3, "ham_disorder must have 3 values [dz, dy, dx]"
-
-    if N_dis == None:
-        N_dis = N
-
+def get_qubit_ham(N, wm=1.0, fixed_seed=False, indv_qubit=False, ds_dis=0.0, sigz_ham=False):
     if fixed_seed:
         np.random.seed(0)
 
