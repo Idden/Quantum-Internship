@@ -56,7 +56,16 @@ def embed_scar_state_to_full(state, basisList, N):
 def giveMeScarVonNeumannEntrop(N, wd, tlist, disorder=[0, 0, 0], reals=50):
     scarEntangle = []
     for _ in range(reals):
-        H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, ham_disorder=disorder, random_seed=True)
+        H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
+        H0, eigenvalues, eigenstates = get_dis_scar_ham(
+            H0_clean,
+            N,
+            basisList,
+            ham_disorder=disorder,
+            fixed_seed=False
+        )
+        H1, driveWeights = get_scar_H1(N, basisList)
+
         args = {"A": 0.1, "omega": wd}
         H = qt.QobjEvo([H0, [H1, coeff]], args=args)
         psi_t = qt.sesolve(H, eigenstates[0], tlist)
@@ -90,17 +99,18 @@ def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
 
-def get_scar_ham(N, fixed_seed=False, indv_qubit=False, ohms=1.0, ds_dis=0):
+def get_scar_ham(N, fixed_seed=False, ohms=1.0):
     assert (N % 2 == 0), "N must be a multiple of 2"
 
     if fixed_seed:
         np.random.seed(0)
 
     basisList = binNoConsecOnesEfficient(N)
-    for basis in basisList:
-        if basis[0] == '1' and basis[-1] == '1':
-            basisList.remove(basis)
-        
+    basisList = [
+        basis for basis in basisList
+        if not (basis[0] == '1' and basis[-1] == '1')
+    ] # rydberg blockade
+
     basisMap = {bitStr: i for i, bitStr in enumerate(basisList)}
     basisLen = len(basisList)
     flippedList = []
@@ -203,54 +213,8 @@ def get_scar_ham(N, fixed_seed=False, indv_qubit=False, ohms=1.0, ds_dis=0):
     z2_index = basisMap[z2_str]
     psi0 = qt.basis(basisLen, z2_index)
 
-    # -------------------------------
-    #
-    # create the driving hamiltonian
-    #
-    # -------------------------------
-
-    # drive strength disorder
-    driveWeights = np.random.uniform(-ds_dis, ds_dis, N)
-    driveWeights = 1.0 + driveWeights
-
-    if not indv_qubit:
-        # create H1 operator for QobjEvo!
-        diagH1 = []
-
-        # switches 0s to -1s and keeps 1s the same for the copyBasis
-        # appends to diagH1 the dot product between each bit string and the 0 -> -1 Z2 state
-        z2bitString = 2 * np.array([int(i) for i in z2_initial(N)]) - 1
-        
-        for i in range(basisLen):
-            bitString = [int(i) for i in basisList[i]]
-            diagH1.append(np.dot(driveWeights * (2 * np.array(bitString) - 1), z2bitString))
-
-        # rows and columns lists for diagonal positions in H1
-        diagLocationH1 = [i for i in range(basisLen)]
-
-        # creates sparse matrix with diagonals as diagH1 list
-        H1 = csr_matrix((diagH1, (diagLocationH1, diagLocationH1)), shape=[basisLen, basisLen])
-        H1 = qt.Qobj(H1)
-    else:
-        # create H1_list operator
-        H1_list = []
-        z2bitString = 2 * np.array([int(b) for b in z2_initial(N)]) - 1
-        
-        for r in range(N):
-            diagHr = []
-            for i in range(basisLen):
-                bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
-                diagHr.append(driveWeights[r] * bitString[r] * z2bitString[r])
-
-            Hr = csr_matrix((diagHr, (range(basisLen), range(basisLen))), shape=(basisLen, basisLen))
-            H1_list.append(qt.Qobj(Hr))
-
-    if not indv_qubit:
-        return H0, H1, eigenvalues, eigenstates, psi0, basisList
-    else:
-        return H0, H1_list, eigenvalues, eigenstates, psi0, basisList
+    return H0, eigenvalues, eigenstates, psi0, basisList
     
-
 def get_qubit_ham(N, wm=1.0, fixed_seed=False, indv_qubit=False, ds_dis=0.0, sigz_ham=False):
     if fixed_seed:
         np.random.seed(0)
@@ -295,7 +259,7 @@ def get_qubit_ham(N, wm=1.0, fixed_seed=False, indv_qubit=False, ds_dis=0.0, sig
         return qH0, qH1_list, eigenvalues, eigenstates
 
 
-def getDisorderedScarHam(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
+def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
     if fixed_seed:
         np.random.seed(0)
 
@@ -380,7 +344,7 @@ def getDisorderedScarHam(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0
 
     return H0_dis, eigenvalues, eigenstates
 
-def getDisorderedQubitHam(qH0_dis, N, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
+def get_dis_qubit_ham(qH0_dis, N, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False):
     if N_dis == None:
         N_dis = N
 
@@ -434,7 +398,7 @@ def getDisorderedQubitHam(qH0_dis, N, N_dis=None, ham_disorder=[0, 0, 0], fixed_
 
     return qH0_dis, qeigenvalues, qeigenstates
 
-def getDisorderedScarH1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qubit=False):
+def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qubit=False):
     if fixed_seed:
         np.random.seed(0)
 
