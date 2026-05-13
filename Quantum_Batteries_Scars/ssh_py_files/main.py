@@ -41,12 +41,11 @@ print(f"Total parameter points: {len(parameter_sweep)}", flush=True)
 def safe_float_name(x):
     return f"{x:.4f}".replace(".", "p")
 
-H0_clean, H1_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
 def run_one(params):
 
-    args = {"A": ds, "omega": wd}
-
     seed, N, x, y, z, ds, dd = params
+
+    args = {"A": ds, "omega": wd}
 
     partial_dir = os.path.join(OUTDIR, "partials")
     os.makedirs(partial_dir, exist_ok=True)
@@ -67,36 +66,21 @@ def run_one(params):
         print(f"Skipping existing: {partial_path}", flush=True)
         return partial_path
 
-    print(
-        f"Starting seed={seed}, N={N}, x={x}, y={y}, z={z}, ds={ds}, dd={dd}",
-        flush=True
-    )
+    print(f"Starting seed={seed}, N={N}, x={x}, y={y}, z={z}, ds={ds}, dd={dd}", flush=True)
 
     np.random.seed(seed)
 
-    H0_dis, eigenvalues_dis, eigenstates_dis = getDisorderedScarHam(
-        H0_clean,
-        N,
-        basisList,
-        ham_disorder=[z, y, x],
-        fixed_seed=False
-    )
-    H1, disorder_weights = getDisorderedScarH1(N, basisList, ds_dis=dd)
+    H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
+    H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=[z, y, x])
+    H1, disorder_weights = get_scar_H1(N, basisList, ds_dis=dd)
 
     bandwidth = eigenvalues_dis[-1] - eigenvalues_dis[0]
 
     H = qt.QobjEvo([H0_dis, [H1, coeff]], args=args)
 
-    psi_t = qt.sesolve(
-        H,
-        eigenstates_dis[0],
-        tlist,
-        e_ops=[H0_dis]
-    )
+    psi_t = qt.sesolve(H, eigenstates_dis[0], tlist, e_ops=[H0_dis])
 
-    Rtau_scar = np.array(
-        np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth
-    )
+    Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
 
     tmp_path = partial_path.replace(".npz", ".tmp.npz")
 
