@@ -433,3 +433,58 @@ def getDisorderedQubitHam(qH0_dis, N, N_dis=None, ham_disorder=[0, 0, 0], fixed_
     qeigenvalues, qeigenstates = qH0_dis.eigenstates()
 
     return qH0_dis, qeigenvalues, qeigenstates
+
+def getDisorderedScarH1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qubit=False):
+    if fixed_seed:
+        np.random.seed(0)
+
+    if N_dis is None:
+        N_dis = N
+
+    basisLen = len(basisList)
+
+    # default no-disorder drive weights
+    driveWeights = np.ones(N)
+
+    # choose which sites get drive-strength disorder
+    if ds_dis != 0.0:
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        driveWeights[dis_sites] += np.random.uniform(-ds_dis, ds_dis, N_dis)
+
+    # Z2 staggered sign pattern: 1010... -> +1, -1, +1, -1, ...
+    z2bitString = 2 * np.array([int(b) for b in z2_initial(N)]) - 1
+
+    diagLocationH1 = list(range(basisLen))
+
+    if not indv_qubit:
+        diagH1 = []
+
+        for i in range(basisLen):
+            bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
+            diagH1.append(np.dot(driveWeights * bitString, z2bitString))
+
+        H1 = csr_matrix(
+            (diagH1, (diagLocationH1, diagLocationH1)),
+            shape=(basisLen, basisLen)
+        )
+
+        return qt.Qobj(H1), driveWeights
+
+    else:
+        H1_list = []
+
+        for r in range(N):
+            diagHr = []
+
+            for i in range(basisLen):
+                bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
+                diagHr.append(driveWeights[r] * bitString[r] * z2bitString[r])
+
+            Hr = csr_matrix(
+                (diagHr, (diagLocationH1, diagLocationH1)),
+                shape=(basisLen, basisLen)
+            )
+
+            H1_list.append(qt.Qobj(Hr))
+
+        return H1_list, driveWeights
