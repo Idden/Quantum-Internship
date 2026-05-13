@@ -13,7 +13,7 @@ from quantumScarFunctions import *
 wd = 0.6365091993031
 reals = 1
 
-OUTDIR = "C:/Users/idden/Mondragon_Stuff/GitHub_QM/Quantum_Batteries_Scars"
+OUTDIR = "C:/Users/idden/Mondragon_Stuff/GitHub_QM/Quantum_Batteries_Scars" # change this path anything
 
 
 xlist = np.logspace(-3, 0, 4)
@@ -50,7 +50,7 @@ def run_one(params):
 
     args = {"A": ds, "omega": wd}
 
-    partial_dir = os.path.join(OUTDIR, "emp_data")
+    partial_dir = os.path.join(OUTDIR, "emp_data") # the emp_data should be replaced with a folder that exists within OUTDIR
     os.makedirs(partial_dir, exist_ok=True)
 
     partial_path = os.path.join(
