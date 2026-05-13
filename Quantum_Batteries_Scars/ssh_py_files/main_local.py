@@ -11,11 +11,9 @@ from quantumScarFunctions import *
 
 
 wd = 0.6365091993031
-t_max = 200
-tlist = np.linspace(0, t_max, 400)
-reals = 50
+reals = 1
 
-OUTDIR = "/home/itsai/ece_mondrag2_chi_link/itsai/qbatts/data"
+OUTDIR = "C:/Users/idden/Mondragon_Stuff/GitHub_QM/Quantum_Batteries_Scars"
 
 
 xlist = np.logspace(-3, 0, 4)
@@ -23,7 +21,7 @@ ylist = np.logspace(-3, 0, 4)
 zlist = np.logspace(-3, 0, 4)
 dslist = np.linspace(0.1, 5.0, 3) # talk about the resonance
 ddlist = np.linspace(0.01, 5.0, 3)
-nlist = [4, 6, 8] # , 12, 14, 16, 18
+nlist = [4] # , 6, 8, 10, 12, 14, 16, 18
 
 parameter_sweep = []
 
@@ -45,9 +43,14 @@ def run_one(params):
 
     seed, N, x, y, z, ds, dd = params
 
+    N_osc = 5
+    N_tpts = 5 # SET TO WHATEVER LATER
+    t_max = N_osc * np.pi / ds
+    tlist = np.linspace(0, t_max, N_tpts * N_osc)
+
     args = {"A": ds, "omega": wd}
 
-    partial_dir = os.path.join(OUTDIR, "partials")
+    partial_dir = os.path.join(OUTDIR, "emp_data")
     os.makedirs(partial_dir, exist_ok=True)
 
     partial_path = os.path.join(
@@ -106,18 +109,25 @@ def run_one(params):
 
 
 if __name__ == "__main__":
-    num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", 1))
-    array_id = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    local_run = "SLURM_ARRAY_TASK_ID" not in os.environ
+
+    if local_run:
+        num_cpus = os.cpu_count() or 1
+        array_id = 0
+        jobs_per_array_task = len(parameter_sweep) * reals
+    else:
+        num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", 1))
+        array_id = int(os.environ["SLURM_ARRAY_TASK_ID"])
+        jobs_per_array_task = num_cpus
 
     os.makedirs(OUTDIR, exist_ok=True)
 
     total_jobs = len(parameter_sweep) * reals
 
-    jobs_per_array_task = num_cpus
-
     start_job = array_id * jobs_per_array_task
     end_job = min(start_job + jobs_per_array_task, total_jobs)
 
+    print(f"Local run: {local_run}", flush=True)
     print(f"Array task {array_id}", flush=True)
     print(f"Using {num_cpus} CPUs", flush=True)
     print(f"Running global jobs {start_job} to {end_job - 1}", flush=True)
@@ -130,7 +140,6 @@ if __name__ == "__main__":
         seed = global_job_id % reals
 
         N, x, y, z, ds, dd = parameter_sweep[param_index]
-
         tasks.append((seed, N, x, y, z, ds, dd))
 
     with Pool(processes=num_cpus) as pool:
