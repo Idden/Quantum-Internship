@@ -2,8 +2,7 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from qutip import Qobj
-from quantumScarFunctions import *
+from disorder_tests.quantumScarFunctions import *
 
 mpl.rcParams["font.size"] = 12
 
@@ -92,7 +91,7 @@ def Rtau_plot(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=10
 def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, reals=50, args=None):
 
     H0, H1, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
-    H0, eigenvalues, eigenstates = getDisorderedScarHam(H0, N, basisList, ham_disorder=disorder)
+    H0, eigenvalues, eigenstates = get_dis_scar_ham(H0, N, basisList, ham_disorder=disorder)
 
     # find scar indices using overlaps
     sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)

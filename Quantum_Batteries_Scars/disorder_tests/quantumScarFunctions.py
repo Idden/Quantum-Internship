@@ -276,7 +276,6 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
         hz = np.zeros(N)
         dis_sites = np.random.choice(N, size=N_dis, replace=False)
         hz[dis_sites] = np.random.uniform(-zd, zd, N_dis)
-        print(hz)
 
         intBasisList = []
         for i in range(basisLen):
