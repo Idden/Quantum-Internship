@@ -2,7 +2,7 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from disorder_tests.quantumScarFunctions import *
+from quantumScarFunctions import *
 
 mpl.rcParams["font.size"] = 12
 
@@ -56,7 +56,7 @@ def plotProbZ2Time(H, N, z2Ket, t=20):
     plt.title(f"Overlap of Z2 State with Itself Over Time N={N}")
     plt.show()
 
-def Rtau_plot(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=100):
+def Rtau_plot_scar(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=100):
     assert (freq_dis == 0 or indv_qubit == True), "freq_dis will do NOTHING when indv_qubit is false"
     assert (len(args) == 2 or indv_qubit == True), "args must be len = 2 if indv_qubit = False"
     assert (len(args) == 1 or indv_qubit == False), "args must be len = 1 if indv_qubit = True"
@@ -82,6 +82,40 @@ def Rtau_plot(H0, H1, N, w=None, indv_qubit=False, freq_dis=0.0, args=None, t=10
         Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
 
     plt.plot(tlist, Rtau_scar)
+    plt.xlabel("Time")
+    plt.ylabel("Rtau")
+    plt.title("Rtau vs. Time")
+    plt.ylim(0, 1)
+    plt.show()
+
+def Rtau_plot_qubit(qH0_list, qH1_list, N, qargs=None, tlist=None, reals=1):
+    assert (reals == 1), "KEEP REALS AT 1"
+
+    qubit_dR_test = []
+    for _ in range(reals):        
+        qbands = []
+        qRtau_one_test = []
+        
+        for i in range(N):
+            qH0 = qH0_list[i]
+            qH1 = qH1_list[i]
+            eigenvalues, eigenstates = qH0.eigenstates()
+            qband = eigenvalues[-1] - eigenvalues[0]
+            qbands.append(qband)
+
+            qH = qt.QobjEvo([qH0, [qH1, coeff]], args=qargs)
+            qpsi_t = qt.sesolve(qH, eigenstates[0], tlist, e_ops=[qH0])
+
+            qRtau_test = np.real(qpsi_t.expect[0] - qpsi_t.expect[0][0])
+            qRtau_one_test.append(qRtau_test)
+
+        qRtau_one_test = np.sum(qRtau_one_test, axis=0) / np.sum(qbands)
+        qubit_dR_test.append(qRtau_one_test)
+
+    qubit_dR_test = np.array(qubit_dR_test)
+    plotQubit_test = np.mean(qubit_dR_test, axis=0)
+
+    plt.plot(tlist, plotQubit_test)
     plt.xlabel("Time")
     plt.ylabel("Rtau")
     plt.title("Rtau vs. Time")
