@@ -132,10 +132,11 @@ def Rtau_plot_qubit(qH0_list, qH1_list, N, qargs=None, tlist=None, reals=1, plot
     return plotQubit_test
 
 
-def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, reals=50, args=None):
+def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=1, args=None):
 
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H1, driveWeights = get_scar_H1(N, basisList)
+    zero_scar, z2_overlap = get_zero_scar(N)
 
     # find scar indices using overlaps
     sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
@@ -165,8 +166,9 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, real
         scarIndices.append(highestOverlapIndex)
     
     scarStates = [eigenstates[i] for i in scarIndices]
+    scarStates[len(scarIndices) // 2] = zero_scar # sets zero energy scar state to S2 one
 
-    if plot_scars:
+    if plot_arc:
         amplitudes = []
         eigenvalueIndices = []
 
@@ -208,38 +210,39 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_scars=False, real
     return scarIndices, scarStates
 
 
-def giveMeScarVonNeumannEntrop(N, wd, tlist, disorder=[0, 0, 0], reals=1):
-    scarEntangle = []
+def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1):
+    H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
+    H1, driveWeights = get_scar_H1(N, basisList)
+
+    vn_plot = []
     for _ in range(reals):
-        H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
-        H0, eigenvalues, eigenstates = get_dis_scar_ham(
-            H0_clean,
-            N,
-            basisList,
-            ham_disorder=disorder,
-            fixed_seed=False
-        )
-        H1, driveWeights = get_scar_H1(N, basisList)
+        H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=disorder)
 
         args = {"A": 0.1, "omega": wd}
-        H = qt.QobjEvo([H0, [H1, coeff]], args=args)
-        psi_t = qt.sesolve(H, eigenstates[0], tlist)
+
+        H = qt.QobjEvo([H0_dis, [H1, coeff]], args=args)
+        psi_t = qt.sesolve(H, eigenstates_dis[0], tlist)
 
         temp = []
         for state in psi_t.states:
-            psi_full = embed_scar_state_to_full(state, basisList, N)
-            rho_A = psi_full.ptrace(list(range(N//2)))
-            temp.append(qt.entropy_vn(rho_A))
-        scarEntangle.append(temp)
-
-    scarEntangle = np.array(scarEntangle)
-    plotScar = np.mean(scarEntangle, axis=0)
-
-    plt.plot(tlist, plotScar)
+            C_AB = get_C_AB_matrix(state, basisList, N)
+            sigma = np.linalg.svd(C_AB, compute_uv=False)
+            lambdas = sigma**2
+            lambdas = lambdas[lambdas > 1e-15] # remove small values
+            vn = -np.sum(lambdas * np.log(lambdas))
+            temp.append(vn)
+        
+        vn_plot.append(temp)
+    
+    vn_plot = np.array(vn_plot)
+    vn_plot = np.mean(vn_plot, axis=0)
+    
+    plt.plot(tlist, vn_plot)
     plt.title(f"Avged Thingamabob w/ {N} Qubits and {disorder} Disorder")
     plt.ylabel("Von Neumann Entropy")
     plt.xlabel("Time")
     plt.show()
 
-def scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1):
+    return vn_plot
+
     
