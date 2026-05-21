@@ -651,24 +651,12 @@ def main():
 
     N = validate_N(args.N)
 
-    # ------------------------------------------------------------
-    # SLURM mode vs local mode
-    # ------------------------------------------------------------
-    slurm_run = "SLURM_ARRAY_TASK_ID" in os.environ
-
-    if slurm_run:
-        array_id = int(os.environ["SLURM_ARRAY_TASK_ID"])
-        num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", "1"))
-        run_label = f"island_{array_id}"
-        run_mode = "slurm"
-    else:
-        array_id = int(args.de_seed)
-        num_cpus = max(1, int(args.workers))
-        run_label = f"local_seed_{array_id}"
-        run_mode = "local"
+    # Local run only: no SLURM variables needed.
+    array_id = int(args.de_seed)
+    num_cpus = max(1, int(args.workers))
 
     outdir = Path(args.outdir)
-    run_dir = outdir / "de_scar_beats_qubit" / f"N{N}" / run_label
+    run_dir = outdir / "de_scar_beats_qubit" / f"N{N}" / f"local_seed_{array_id}"
     cache_dir = run_dir / "cache"
     final_dir = run_dir / "final"
 
@@ -677,6 +665,7 @@ def main():
 
     # Same seed rule:
     # For a given DE candidate, scar and qubits both get the same seed.
+    # This makes the disorder realization paired inside that objective evaluation.
     objective_seeds = list(range(args.seed_offset, args.seed_offset + args.objective_reals))
     final_seeds = list(range(args.seed_offset, args.seed_offset + args.final_reals))
 
@@ -693,10 +682,9 @@ def main():
         (args.dd_min, args.dd_max),
     ]
 
-    print("Starting differential evolution search", flush=True)
-    print(f"Run mode: {run_mode}", flush=True)
-    print(f"Island / DE seed: {array_id}", flush=True)
-    print(f"Workers / CPUs: {num_cpus}", flush=True)
+    print("Starting local differential evolution search", flush=True)
+    print(f"DE seed: {array_id}", flush=True)
+    print(f"Local workers: {num_cpus}", flush=True)
     print(f"N: {N}", flush=True)
     print(f"Qubit count: {N}", flush=True)
     print(f"Objective seeds: {objective_seeds}", flush=True)
@@ -810,8 +798,6 @@ def main():
     summary = {
         "success": success,
         "meaning": "success means final_score = mean_seed[max(Rtau_scar) - max(Rtau_decoupled_qubits)] > 0",
-        "run_mode": run_mode,
-        "array_id": array_id if slurm_run else None,
         "de_seed": array_id,
         "workers": num_cpus,
         "N": int(N),
