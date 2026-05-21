@@ -1,4 +1,5 @@
 import os
+import time  #NEW
 
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -10,20 +11,18 @@ from multiprocessing import Pool
 from quantumScarFunctions import *
 
 
-wd = 0.6366896896896898
-t_max = 200
-tlist = np.linspace(0, t_max, 400)
-reals = 50
+wd = 0.6365091993031
+reals = 50  #NEW
 
-OUTDIR = "/home/itsai/ece_mondrag2_chi_link/itsai/qbatts/data"
+OUTDIR = "/Users/shemian29/Library/CloudStorage/Dropbox/UIC/Research/QuantumBatteries/Idden_code" # change this path anything
 
 
-xlist = np.logspace(-3, 0, 4)
-ylist = np.logspace(-3, 0, 4)
-zlist = np.logspace(-3, 0, 4)
-dslist = np.linspace(0.1, 5.0, 3) # talk about the resonance
-ddlist = np.linspace(0.01, 5.0, 3)
-nlist = [4, 6, 8] # , 12, 14, 16, 18
+xlist = np.logspace(-3, 0, 3)
+ylist = np.logspace(-3, 0, 3)
+zlist = np.logspace(-3, 0, 3)
+dslist = np.linspace(0.1, 5.0, 2) # talk about the resonance
+ddlist = np.linspace(0.01, 5.0, 2)
+nlist = [4, 6, 8]  #NEW
 
 parameter_sweep = []
 
@@ -45,9 +44,14 @@ def run_one(params):
 
     seed, N, x, y, z, ds, dd = params
 
+    N_osc = 5
+    N_tpts = 5 # SET TO WHATEVER LATER
+    t_max = N_osc * np.pi / ds
+    tlist = np.linspace(0, t_max, N_tpts * N_osc)
+
     args = {"A": ds, "omega": wd}
 
-    partial_dir = os.path.join(OUTDIR, "partials")
+    partial_dir = os.path.join(OUTDIR, "Data") # the emp_data should be replaced with a folder that exists within OUTDIR
     os.makedirs(partial_dir, exist_ok=True)
 
     partial_path = os.path.join(
@@ -67,12 +71,13 @@ def run_one(params):
         return partial_path
 
     print(f"Starting seed={seed}, N={N}, x={x}, y={y}, z={z}, ds={ds}, dd={dd}", flush=True)
+    start_time = time.perf_counter()  #NEW
 
     np.random.seed(seed)
 
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=[z, y, x])
-    H1, disorder_weights = get_scar_H1(N, basisList, ds_dis=dd)
+    H1, _ = get_scar_H1(N, basisList, ds_dis=dd)
 
     bandwidth = eigenvalues_dis[-1] - eigenvalues_dis[0]
 
@@ -81,6 +86,7 @@ def run_one(params):
     psi_t = qt.sesolve(H, eigenstates_dis[0], tlist, e_ops=[H0_dis])
 
     Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
+    calculation_time_seconds = time.perf_counter() - start_time  #NEW
 
     tmp_path = partial_path.replace(".npz", ".tmp.npz")
 
@@ -96,6 +102,7 @@ def run_one(params):
         z=z,
         ds=ds,
         dd=dd,
+        calculation_time_seconds=calculation_time_seconds,  #NEW
         t_max=t_max
     )
 
@@ -106,18 +113,25 @@ def run_one(params):
 
 
 if __name__ == "__main__":
-    num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", 1))
-    array_id = int(os.environ["SLURM_ARRAY_TASK_ID"])
+    local_run = "SLURM_ARRAY_TASK_ID" not in os.environ
+
+    if local_run:
+        num_cpus = os.cpu_count() or 1
+        array_id = 0
+        jobs_per_array_task = len(parameter_sweep) * reals
+    else:
+        num_cpus = int(os.environ.get("SLURM_CPUS_PER_TASK", 1))
+        array_id = int(os.environ["SLURM_ARRAY_TASK_ID"])
+        jobs_per_array_task = num_cpus
 
     os.makedirs(OUTDIR, exist_ok=True)
 
     total_jobs = len(parameter_sweep) * reals
 
-    jobs_per_array_task = num_cpus
-
     start_job = array_id * jobs_per_array_task
     end_job = min(start_job + jobs_per_array_task, total_jobs)
 
+    print(f"Local run: {local_run}", flush=True)
     print(f"Array task {array_id}", flush=True)
     print(f"Using {num_cpus} CPUs", flush=True)
     print(f"Running global jobs {start_job} to {end_job - 1}", flush=True)
@@ -130,7 +144,6 @@ if __name__ == "__main__":
         seed = global_job_id % reals
 
         N, x, y, z, ds, dd = parameter_sweep[param_index]
-
         tasks.append((seed, N, x, y, z, ds, dd))
 
     with Pool(processes=num_cpus) as pool:

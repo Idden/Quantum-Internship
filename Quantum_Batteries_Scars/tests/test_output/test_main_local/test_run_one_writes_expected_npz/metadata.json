@@ -1,0 +1,21 @@
+{
+  "output_file": "Data/Rtau_N4_x0p0000_y0p0000_z0p0000_ds0p5000_dd0p0000_seed0_tmax31.41592653589793.npz",
+  "keys": [
+    "N",
+    "Rtau_scar",
+    "calculation_time_seconds",
+    "dd",
+    "ds",
+    "seed",
+    "t_max",
+    "tlist",
+    "wd",
+    "x",
+    "y",
+    "z"
+  ],
+  "num_time_points": 25,
+  "trajectory_npz": "run_one_output.npz",
+  "trajectory_csv": "run_one_output.csv",
+  "trajectory_plot": "run_one_output.png"
+}
