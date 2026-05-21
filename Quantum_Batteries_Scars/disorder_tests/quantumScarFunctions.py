@@ -2,7 +2,6 @@ import math
 import numpy as np
 from scipy.sparse import csr_matrix
 import qutip as qt
-import matplotlib.pyplot as plt
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):

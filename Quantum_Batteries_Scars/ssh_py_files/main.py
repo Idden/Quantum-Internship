@@ -7,7 +7,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 import numpy as np
 import qutip as qt
 from multiprocessing import Pool
-from quantumScarFunctions import *
+from GitHub_QM.Quantum_Batteries_Scars.better_ssh_files.quantumScarFunctions import *
 
 
 wd = 0.6366896896896898

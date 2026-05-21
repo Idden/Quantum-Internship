@@ -2,7 +2,7 @@
 import numpy as np
 import qutip as qt
 from multiprocessing import Pool
-from quantumScarFunctions import *
+from GitHub_QM.Quantum_Batteries_Scars.better_ssh_files.quantumScarFunctions import *
 
 
 xlist = np.logspace(-3, 0, 4)

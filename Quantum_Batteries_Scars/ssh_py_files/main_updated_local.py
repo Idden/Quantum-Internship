@@ -14,7 +14,7 @@ import numpy as np
 import qutip as qt
 from scipy.optimize import differential_evolution
 
-from quantumScarFunctions import *
+from GitHub_QM.Quantum_Batteries_Scars.better_ssh_files.quantumScarFunctions import *
 
 
 # ============================================================

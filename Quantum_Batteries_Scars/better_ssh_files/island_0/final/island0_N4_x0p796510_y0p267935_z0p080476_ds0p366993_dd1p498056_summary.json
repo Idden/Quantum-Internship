@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "meaning": "success means final_score = mean_seed[max(Rtau_scar) - max(Rtau_decoupled_qubits)] > 0",
+  "run_mode": "slurm",
+  "array_id": 0,
+  "de_seed": 0,
+  "workers": 2,
+  "N": 4,
+  "qubit_count": 4,
+  "wd": 0.6366896896896898,
+  "wm": 1.0,
+  "t_max": 200.0,
+  "num_t_points": 400,
+  "x": 0.7965102352085145,
+  "y": 0.2679345400998643,
+  "z": 0.08047559379526904,
+  "ds": 0.366992759668479,
+  "dd": 1.4980559025209357,
+  "objective_score": 0.3670698811217011,
+  "final_score": 0.3670698811217011,
+  "final_score_std": 0.0,
+  "max_Rtau_scar_mean": 0.751367497881056,
+  "max_Rtau_qubit_mean": 0.38429761675935487,
+  "objective_reals": 1,
+  "final_reals": 1,
+  "seed_offset": 0,
+  "objective_seeds": [
+    0
+  ],
+  "final_seeds": [
+    0
+  ],
+  "same_seed_pairing": true,
+  "maxiter": 1,
+  "popsize": 2,
+  "tol": 0.01,
+  "polish": false,
+  "de_elapsed_seconds": 3.6269437139853835,
+  "npz_path": "/home/itsai/ece_mondrag2_chi_link/itsai/qbatts/data/de_scar_beats_qubit/N4/island_0/final/island0_N4_x0p796510_y0p267935_z0p080476_ds0p366993_dd1p498056_result.npz",
+  "scar_probs_all_shape": [
+    1,
+    5,
+    400
+  ],
+  "scar_probs_all_shape_meaning": "num_final_seeds, num_scar_states, num_time_points"
+}
