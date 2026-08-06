@@ -384,8 +384,10 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=Fals
         dis_sites = np.random.choice(N, size=N_dis, replace=False)
         hx[dis_sites] = np.random.uniform(-xd, xd, N_dis)
 
-    ds = np.random.uniform(-ds_dis, ds_dis, N)
-    ds += 1.0
+    driveWeights = np.ones(N)
+    if ds_dis != 0.0:
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        driveWeights[dis_sites] += np.random.uniform(-ds_dis, ds_dis, N_dis)
 
     sigz = qt.sigmaz()
     sigy = qt.sigmay()
@@ -398,25 +400,57 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=Fals
 
         if sigz_ham:
             ops0 = -0.5 * wm * sigz
-            ops1 = sigx
+            ops1 = driveWeights[i] * sigx
         else:
             ops0 = -0.5 * wm * sigx
-            ops1 = sigz
+            ops1 = driveWeights[i] * sigz
 
         if ham_disorder[0] != 0.0:
-            dz = hz[i] * sigz
-            ops0 += dz
+            ops0 += hz[i] * sigz
         if ham_disorder[1] != 0.0:
-            dy = hy[i] * sigy
-            ops0 += dy
+            ops0 += hy[i] * sigy
         if ham_disorder[2] != 0.0:
-            dx = hx[i] * sigx
-            ops0 += dx
-        
+            ops0 += hx[i] * sigx
+
         qH0_list.append(ops0)
         qH1_list.append(ops1)
+
+    return qH0_list, qH1_list, driveWeights
+
+
+    # ds = np.random.uniform(-ds_dis, ds_dis, N)
+    # ds += 1.0
+
+    # sigz = qt.sigmaz()
+    # sigy = qt.sigmay()
+    # sigx = qt.sigmax()
+
+    # qH0_list = []
+    # qH1_list = []
+
+    # for i in range(N):
+
+    #     if sigz_ham:
+    #         ops0 = -0.5 * wm * sigz
+    #         ops1 = sigx
+    #     else:
+    #         ops0 = -0.5 * wm * sigx
+    #         ops1 = sigz
+
+    #     if ham_disorder[0] != 0.0:
+    #         dz = hz[i] * sigz
+    #         ops0 += dz
+    #     if ham_disorder[1] != 0.0:
+    #         dy = hy[i] * sigy
+    #         ops0 += dy
+    #     if ham_disorder[2] != 0.0:
+    #         dx = hx[i] * sigx
+    #         ops0 += dx
+        
+    #     qH0_list.append(ops0)
+    #     qH1_list.append(ops1)
             
-    return qH0_list, qH1_list
+    # return qH0_list, qH1_list
 
 
 def get_zero_scar(N):
