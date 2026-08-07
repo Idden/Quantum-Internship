@@ -210,7 +210,7 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=
     return scarIndices, scarStates
 
 
-def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1):
+def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1, save_fig=False):
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H1, driveWeights = get_scar_H1(N, basisList)
 
@@ -238,9 +238,11 @@ def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1):
     vn_plot = np.mean(vn_plot, axis=0)
     
     plt.plot(tlist, vn_plot)
-    plt.title(f"Avged Thingamabob w/ {N} Qubits and {disorder} Disorder")
+    plt.title(f"Von Neumann Entropy vs. Time")
     plt.ylabel("Von Neumann Entropy")
     plt.xlabel("Time")
+    if save_fig:
+        plt.savefig(f"figures/vn_entrop_N{N}_disorder{disorder}_reals{reals}.pdf")
     plt.show()
 
     return vn_plot
