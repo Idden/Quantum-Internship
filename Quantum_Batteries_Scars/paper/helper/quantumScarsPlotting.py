@@ -2,7 +2,7 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from GitHub_QM.Quantum_Batteries_Scars.paper.helper.quantumScarFunctions import *
+from helper.quantumScarFunctions import *
 
 mpl.rcParams["font.size"] = 12
 
