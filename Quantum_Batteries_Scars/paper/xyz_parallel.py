@@ -1,5 +1,5 @@
 import os
-os.environ["OMP_NUM_THREADS"] = "1"   # before numpy, so workers don't fight over cores
+os.environ["OMP_NUM_THREADS"] = "1"
 
 import numpy as np
 import qutip as qt
@@ -18,9 +18,9 @@ tlist = np.linspace(0, t_max, 400)
 reals = 500
 dis = 0.3
 
-dz = 0.0
+dz = dis
 dy = 0.0
-dx = dis
+dx = 0.0
 
 args = {"A": 0.1, "omega": wd}
 qargs = {"A": 0.1, "omega": wm}
@@ -65,17 +65,7 @@ if __name__ == "__main__":
     print(f"{reals} realizations in {elapsed:.1f} s "
       f"({elapsed/reals:.5f} s per realization)")
 
-    full_scar = np.mean([r[0] for r in results], axis=0)
-    full_qubit = np.mean([r[1] for r in results], axis=0)
+    full_scar = np.array([r[0] for r in results])
+    full_qubit = np.array([r[1] for r in results])
 
-    np.savez(f"xyz_data/x_dis_N{N}.npz", tlist=tlist, scar=full_scar, qubit=full_qubit)
-
-    plt.title(f"Avged Rtau for Disorder=[{dz},{dy},{dx}] for N={N}")
-    plt.xlabel("Time")
-    plt.ylabel("Rtau")
-    plt.plot(tlist, full_scar, label="Scar")
-    plt.plot(tlist, full_qubit, label="Qubit")
-    plt.legend()
-    plt.ylim(0, 1)
-    # plt.savefig(f"figures/xyz_N{N}_dis{dis}_reals{reals}.pdf")
-    plt.show()
+    np.savez(f"xyz_data/z_dis_N{N}_error_bands.npz", tlist=tlist, scar=full_scar, qubit=full_qubit)

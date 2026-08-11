@@ -60,14 +60,17 @@ if __name__ == "__main__":
     print(f"{reals} realizations in {elapsed:.1f} s "
       f"({elapsed/reals:.5f} s per realization)")
 
-    full_scar = np.mean([r[0] for r in results], axis=0)
-    full_qubit = np.mean([r[1] for r in results], axis=0)
+    full_scar = np.array([r[0] for r in results])
+    full_qubit = np.array([r[1] for r in results])
 
-    plt.title(f"Avged Rtau for Disorder={dis} for N={N}")
+    plt.title(f"Drive Strength Disorder")
     plt.xlabel("Time")
-    plt.ylabel("Rtau")
-    plt.plot(tlist, full_scar, label="Scar")
-    plt.plot(tlist, full_qubit, label="Qubit")
+    plt.ylabel(r"$R(\tau)$")
+    for arr, lab in [(full_scar, "Scar"), (full_qubit, "Qubit")]:
+        m, sem = arr.mean(0), arr.std(0, ddof=1) / np.sqrt(arr.shape[0])
+        line, = plt.plot(tlist, m, lw=0.9, label=lab)
+        plt.fill_between(tlist, m - sem, m + sem,
+                         color=line.get_color(), alpha=0.3, lw=0)
     plt.legend()
     plt.ylim(0, 1)
     plt.savefig(f"figures/ds_dis_N{N}_dis{dis}_reals{reals}.pdf")
