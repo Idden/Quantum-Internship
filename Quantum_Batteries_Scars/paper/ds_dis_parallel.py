@@ -68,7 +68,8 @@ if __name__ == "__main__":
     plt.ylabel(r"$R(\tau)$")
     for arr, lab in [(full_scar, "Scar"), (full_qubit, "Qubit")]:
         m, sem = arr.mean(0), arr.std(0, ddof=1) / np.sqrt(arr.shape[0])
-        line, = plt.plot(tlist, m, lw=0.9, label=lab)
+        print(max(sem))
+        line, = plt.plot(tlist, m, label=lab)
         plt.fill_between(tlist, m - sem, m + sem,
                          color=line.get_color(), alpha=0.3, lw=0)
     plt.legend()
