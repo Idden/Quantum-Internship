@@ -10,8 +10,8 @@ import time
 
 N = 8
 wd = 0.6366896896896898
-reals = 2000
-dlist = np.linspace(0, 2.0, 201)
+reals = 1000
+dlist = np.linspace(0, 5.0, 201)
 
 dz = 0
 dy = 0
@@ -23,7 +23,7 @@ def run_one(seed):
     np.random.seed(seed)
     out = []
 
-    for dx in dlist:
+    for dz in dlist:
         H0_dis, eigenvalues, eigenstates = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=[dz, dy, dx])
 
         temp = 0
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     rn_all = np.array(results)
     rn = rn_all.mean(axis=0)
 
-    np.savez(f"rn_data/rn_x_N{N}.npz", dlist=dlist, rn=rn, rn_all=rn_all)
+    np.savez(f"rn_data/rn_z_N{N}.npz", dlist=dlist, rn=rn, rn_all=rn_all)
