@@ -1,6 +1,4 @@
 import os
-os.environ["OMP_NUM_THREADS"] = "1"
-
 import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
@@ -8,9 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from helper.quantumScarFunctions import *
 import time
 
-# print(os.process_cpu_count())
-
-N = 14
+N = 16
 wd = 0.6366896896896898
 wm = 1.0
 t_max = 200
