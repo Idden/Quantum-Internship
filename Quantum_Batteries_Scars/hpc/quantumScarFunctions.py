@@ -1,7 +1,8 @@
 import math
 import numpy as np
-from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 import qutip as qt
+from scipy.sparse.linalg import eigsh, splu, LinearOperator
 
 # task 1: make function that turns binary to decimal
 def binToDeci(num):
@@ -170,8 +171,8 @@ def get_scar_ham(N, fixed_seed=False, ohms=1.0, diagonalize=True):
     onesList = np.ones(len(rowBare), dtype=int)
 
     # create the sparse matrix and turn it into a Qobj
-    sparseBareHamiltonian = csr_matrix((onesList, (rowBare, columnBare)), shape=[basisLen, basisLen])
-    sparseFactoredHamiltonian = csr_matrix((numList, (rowFactor, columnFactor)), shape=[basisLen, basisLen])
+    sparseBareHamiltonian = sp.csr_matrix((onesList, (rowBare, columnBare)), shape=[basisLen, basisLen])
+    sparseFactoredHamiltonian = sp.csr_matrix((numList, (rowFactor, columnFactor)), shape=[basisLen, basisLen])
     H0 = (ohms / 2 * sparseBareHamiltonian) + (-0.026 * ohms * sparseFactoredHamiltonian)
     H0 = qt.Qobj(H0)
 
@@ -221,7 +222,7 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
             dataZ.append(np.dot(intBasisList[i], hz))
 
         pert_location = list(range(basisLen))
-        Hz = qt.Qobj(csr_matrix((dataZ, (pert_location, pert_location)), shape=[basisLen, basisLen]))
+        Hz = qt.Qobj(sp.csr_matrix((dataZ, (pert_location, pert_location)), shape=[basisLen, basisLen]))
         H0_dis = H0_dis + Hz
     
     if ham_disorder[1] != 0.0:
@@ -247,7 +248,7 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
                     colY.append(i)
                     dataY.append(hy[r] * phase)
 
-        Hy = qt.Qobj(csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen)))
+        Hy = qt.Qobj(sp.csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen)))
         H0_dis = H0_dis + Hy
 
     if ham_disorder[2] != 0.0:
@@ -271,7 +272,7 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
                     colX.append(i)
                     dataX.append(hx[r])
 
-        Hx = qt.Qobj(csr_matrix((dataX, (rowX, colX)), shape=(basisLen, basisLen)))
+        Hx = qt.Qobj(sp.csr_matrix((dataX, (rowX, colX)), shape=(basisLen, basisLen)))
         H0_dis = H0_dis + Hx
 
     H0_dis = qt.Qobj(H0_dis)
@@ -311,7 +312,7 @@ def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qub
             bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
             diagH1.append(np.dot(driveWeights * bitString, z2bitString))
 
-        H1 = csr_matrix(
+        H1 = sp.csr_matrix(
             (diagH1, (diagLocationH1, diagLocationH1)),
             shape=(basisLen, basisLen)
         )
@@ -328,7 +329,7 @@ def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qub
                 bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
                 diagHr.append(driveWeights[r] * bitString[r] * z2bitString[r])
 
-            Hr = csr_matrix(
+            Hr = sp.csr_matrix(
                 (diagHr, (diagLocationH1, diagLocationH1)),
                 shape=(basisLen, basisLen)
             )
@@ -361,7 +362,7 @@ def get_Hy(N, basisList):
                 colY.append(i)
                 dataY.append(hy[r] * phase)
 
-    Hy = qt.Qobj(csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen)))
+    Hy = qt.Qobj(sp.csr_matrix((dataY, (rowY, colY)), shape=(basisLen, basisLen)))
 
     return Hy
 
@@ -424,149 +425,68 @@ def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=Fals
 
     return qH0_list, qH1_list, driveWeights
 
+def get_zero_scar(N, k0=None):
 
-    # ds = np.random.uniform(-ds_dis, ds_dis, N)
-    # ds += 1.0
+    def to_scipy(H):
+        # qutip 4 stores scipy sparse directly, qutip 5 wraps it
+        data = getattr(H, "data", None)
+        if sp.issparse(data):
+            return data.tocsr()
+        if hasattr(data, "as_scipy"):
+            return data.as_scipy().tocsr()
+        return sp.csr_matrix(H.full())
 
-    # sigz = qt.sigmaz()
-    # sigy = qt.sigmay()
-    # sigx = qt.sigmax()
-
-    # qH0_list = []
-    # qH1_list = []
-
-    # for i in range(N):
-
-    #     if sigz_ham:
-    #         ops0 = -0.5 * wm * sigz
-    #         ops1 = sigx
-    #     else:
-    #         ops0 = -0.5 * wm * sigx
-    #         ops1 = sigz
-
-    #     if ham_disorder[0] != 0.0:
-    #         dz = hz[i] * sigz
-    #         ops0 += dz
-    #     if ham_disorder[1] != 0.0:
-    #         dy = hy[i] * sigy
-    #         ops0 += dy
-    #     if ham_disorder[2] != 0.0:
-    #         dx = hx[i] * sigx
-    #         ops0 += dx
-        
-    #     qH0_list.append(ops0)
-    #     qH1_list.append(ops1)
-            
-    # return qH0_list, qH1_list
-
-
-def get_zero_scar(N):
+    def max_eig(H):
+        return float(eigsh(H, k=1, which="LA", return_eigenvectors=False, tol=0)[0].real)
 
     N2 = N // 2
 
-    Hx, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
-    Hy = get_Hy(N, basisList)
-    Hz, _ = get_scar_H1(N, basisList)
+    H0_clean, _, _, psi0, basisList = get_scar_ham(N, diagonalize=False)
+    D = len(basisList)
 
-    xeigvals = Hx.eigenenergies()
-    yeigvals = Hy.eigenenergies()
-    zeigvals = Hz.eigenenergies()
+    Hx = to_scipy(H0_clean).astype(complex)
+    Hy = to_scipy(get_Hy(N, basisList)).astype(complex)
+    Hz = to_scipy(get_scar_H1(N, basisList)[0]).astype(complex)
 
-    Hx = Hx / np.max(xeigvals) * N2
-    Hy = Hy / np.max(yeigvals) * N2
-    Hz = Hz / np.max(zeigvals) * N2
+    Hx = Hx * (N2 / max_eig(Hx))
+    Hy = Hy * (N2 / max_eig(Hy))
+    Hz = Hz * (N2 / max_eig(Hz))
 
-    xeigvals, xeigstates = Hx.eigenstates()
-    yeigvals, yeigstates = Hy.eigenstates()
-    zeigvals, zeigstates = Hz.eigenstates()
+    # ---- null space of Hx --------------------------------------------
+    H2 = (Hx @ Hx).tocsc()
 
-    # ----------------------------
-    # Find zero-energy subspace of Hx
-    # ----------------------------
+    # one LU, reused by every ARPACK restart. this is the expensive step.
+    lu = splu((H2 + 1e-9 * sp.eye(D, format="csc", dtype=complex)).tocsc())
+    OPinv = LinearOperator((D, D), matvec=lu.solve, dtype=complex)
 
-    threshold = 1e-14
+    # start generously: the zero-mode count is ~1-2% of D and each restart
+    # costs a full ARPACK solve
+    K = k0 if k0 is not None else max(16, int(0.02 * D))
 
-    zeros_eigenstates = []
+    while True:
+        w, v = eigsh(H2, k=K, sigma=-1e-9, which="LM", OPinv=OPinv)
+        nz = np.linalg.norm(Hx @ v, axis=0) < 1e-8   # residual, not the squared eigenvalue
+        if nz.sum() < K:
+            break
+        K *= 2
 
-    for i, energy in enumerate(xeigvals):
-        if abs(energy) < threshold:
-            zeros_eigenstates.append(xeigstates[i])
+    V, _ = np.linalg.qr(v[:, nz])                    # ARPACK basis is not orthonormal here
 
-    if len(zeros_eigenstates) == 0:
-        raise ValueError("No zero-energy states found. Try increasing threshold.")
+    # ---- S^2 inside the null space, without a dense DxD --------------
+    S2 = sum((M @ V).conj().T @ (M @ V) for M in (Hx, Hy, Hz))
 
-    # P has rows = zero-energy basis vectors
-    P = []
+    sv, ss = np.linalg.eigh(S2)
+    keep = np.abs(sv - sv[-1]) < 1e-10
+    cand = V @ ss[:, keep]                           # D x n_max, orthonormal
 
-    for state in zeros_eigenstates:
-        P.append(state.full().flatten())
+    z2 = psi0.full().ravel().astype(complex)
+    scar = cand @ (cand.conj().T @ z2)               # project Z2 into the max-S^2 manifold
 
-    P = np.array(P)
+    norm = np.linalg.norm(scar)
+    if norm < 1e-14:
+        raise ValueError("Z2 has essentially no overlap with the max-S2 zero-energy subspace")
 
-    # ----------------------------
-    # Build projected angular momentum S^2
-    #
-    # Important:
-    # Use P (Sx^2 + Sy^2 + Sz^2) P^\dagger
-    # NOT (P Sx P^\dagger)^2 + ...
-    # ----------------------------
+    scar = scar / norm
+    z2_overlap = float(np.abs(np.vdot(z2, scar)) ** 2)
 
-    S2_full = (
-        Hx.full() @ Hx.full()
-        + Hy.full() @ Hy.full()
-        + Hz.full() @ Hz.full()
-    )
-
-    S2_zeroes = np.conj(P) @ S2_full @ P.T
-
-    S2 = qt.Qobj(S2_zeroes)
-
-    seigvals, seigstates = S2.eigenstates()
-
-    # ----------------------------
-    # Take the maximum-S2 subspace
-    # ----------------------------
-
-    s_tol = 1e-10
-    max_s_val = seigvals[-1]
-
-    max_s_states = []
-
-    for i, val in enumerate(seigvals):
-        if abs(val - max_s_val) < s_tol:
-            max_s_states.append(seigstates[i])
-
-    # ----------------------------
-    # Reconstruct max-S2 states back into full constrained Hilbert space
-    # ----------------------------
-
-    candidates = []
-
-    for s_state in max_s_states:
-        candidate_np = s_state.full().flatten() @ P
-        candidate = qt.Qobj(candidate_np)
-        candidate = candidate / candidate.norm()
-        candidates.append(candidate)
-
-    # ----------------------------
-    # Pick the Z2-visible state inside the max-S2 scar manifold
-    #
-    # This is NOT projecting Z2 into the full zero-energy subspace.
-    # This projects Z2 only into the angular-momentum-selected max-S2 subspace.
-    # ----------------------------
-
-    scar = 0 * candidates[0]
-
-    for candidate in candidates:
-        coeff = candidate.dag() * psi0
-        scar += coeff * candidate
-
-    if scar.norm() < 1e-14:
-        print("WARNING: Z2 has almost zero overlap with the max-S2 zero-energy subspace.")
-        print("Try checking operator definitions or degeneracies.")
-    else:
-        scar = scar / scar.norm()
-
-    z2_overlap = np.abs(psi0.dag() * scar) ** 2
-
-    return scar, z2_overlap
+    return qt.Qobj(scar.reshape(-1, 1)), z2_overlap
