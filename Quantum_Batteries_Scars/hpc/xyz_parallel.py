@@ -10,12 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 from quantumScarFunctions import *
 import time
 
-assert int(qt.__version__.split(".")[0]) >= 5, (
-    "needs qutip 5: the coefficient functions here use the f(t, A, omega) "
-    "keyword signature, qutip 4 only accepts f(t, args)"
-)
-
-N = int(os.environ.get("SCAR_N", 20))
+N = 12            # must match make_scar_states.py and merge_bands.py
 wd = 0.6366896896896898
 wm = 1.0
 t_max = 200
@@ -37,7 +32,7 @@ H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N, diagonaliz
 H1, driveWeights = get_scar_H1(N, basisList)
 
 _scarFile = f"xyz_data/scar_states_N{N}.npz"
-assert os.path.exists(_scarFile), f"run make_scar_states.py with SCAR_N={N} first"
+assert os.path.exists(_scarFile), f"run make_scar_states.py with N={N} first"
 _sc = np.load(_scarFile)
 
 scarMatC = np.ascontiguousarray(
@@ -99,10 +94,13 @@ def run_one(job):
 if __name__ == "__main__":
     seeds = np.random.SeedSequence(0).generate_state(reals)
 
+    # off the cluster these all fall back to "task 0 of 1", i.e. run everything
     task = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+
     # SLURM_ARRAY_TASK_COUNT is not set on every slurm build. if it silently
-    # falls back to 1, all 20 tasks compute all 300 realizations and
-    # merge_bands trips its duplicate-seed assert after the whole array ran.
+    # fell back to 1, all 20 array tasks would compute all 300 realizations and
+    # merge_bands would only catch it, on its duplicate-seed assert, after the
+    # whole array had already run.
     if "SLURM_ARRAY_TASK_COUNT" in os.environ:
         ntask = int(os.environ["SLURM_ARRAY_TASK_COUNT"])
     elif "SLURM_ARRAY_TASK_MAX" in os.environ:
@@ -110,11 +108,12 @@ if __name__ == "__main__":
                  - int(os.environ.get("SLURM_ARRAY_TASK_MIN", 0)) + 1)
     else:
         ntask = 1
+
     ncpu = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count()))
 
     # every (axis, seed) pair, sliced so task k takes every ntask-th one
     jobs = [(label, int(s)) for label in configs for s in seeds][task::ntask]
-    print(f"N={N}  task {task}/{ntask}  ncpu={ncpu}  {len(jobs)} realizations", flush=True)
+    print(f"N={N}  task {task} of {ntask}  ncpu={ncpu}  {len(jobs)} realizations", flush=True)
 
     t0 = time.perf_counter()
     with ProcessPoolExecutor(max_workers=ncpu) as pool:

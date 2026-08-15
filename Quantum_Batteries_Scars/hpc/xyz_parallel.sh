@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=scar-bands
-#SBATCH --account=CHANGEME
-#SBATCH --partition=CHANGEME
+#SBATCH --account=ece_mondrag2
+#SBATCH --partition=ece_mondrag2
 #SBATCH --array=0-19
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -10,24 +10,22 @@
 #SBATCH --time=04:00:00
 #SBATCH --output=logs/%x_%A_%a.out
 
-# IMPORTANT: run this ONCE from the login node before the first sbatch.
-# slurm opens the --output file before any line of this script executes,
-# so the mkdir below cannot save you:
-#   mkdir -p logs xyz_data/parts
+# Submit this only AFTER make_scar_states.sh has finished - it reads the npz
+# that job writes. N must match make_scar_states.py.
+#
+# Run "mkdir -p logs" ONCE before your first sbatch. Slurm opens the --output
+# file before this script starts, so it dies with nowhere to write otherwise.
+#
+#   sbatch xyz_parallel.sh
 
 # module load python
 # source ~/venvs/scar/bin/activate
 
+# one thread per worker, or BLAS oversubscribes the node
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 
-# single source of truth for N, read by all three python scripts
-export SCAR_N=20
-
-mkdir -p logs xyz_data/parts
+mkdir -p xyz_data/parts
 
 python xyz_parallel.py
-
-# then, once the whole array is done:
-#   SCAR_N=20 python merge_bands.py

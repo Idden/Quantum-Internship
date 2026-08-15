@@ -2,14 +2,9 @@ import os
 import glob
 import numpy as np
 import matplotlib
-
-# compute nodes and most login shells have no display; Agg keeps savefig working
-if not os.environ.get("DISPLAY"):
-    matplotlib.use("Agg")
-
 import matplotlib.pyplot as plt
 
-N = int(os.environ.get("SCAR_N", 20))
+N = 12            # must match xyz_parallel.py
 dis = 0.3
 
 data = {}
@@ -20,7 +15,7 @@ for label in ("z", "y", "x"):
     if not files:
         raise SystemExit(
             f"no part files matching xyz_data/parts/{label}_dis_N{N}_task*.npz - "
-            f"check that xyz_parallel.py ran with the same N"
+            f"check that N here matches the N in xyz_parallel.py"
         )
 
     parts = [np.load(f) for f in files]
@@ -49,6 +44,10 @@ for label in ("z", "y", "x"):
 
 os.makedirs("figures", exist_ok=True)
 
+# on a cluster with no display matplotlib picks Agg on its own, and plt.show()
+# would just print a warning. on your laptop it picks a real backend.
+HAS_GUI = matplotlib.get_backend().lower() != "agg"
+
 
 def band(arr):
     arr = np.atleast_2d(arr)
@@ -58,9 +57,7 @@ def band(arr):
 
 
 # -------------------------------
-#
 # R(tau) comparison, one panel per disorder axis
-#
 # -------------------------------
 panels = [("X Disorder", *data["x"][:2]),
           ("Y Disorder", *data["y"][:2]),
@@ -86,9 +83,7 @@ plt.tight_layout()
 plt.savefig(f"figures/xyz_N{N}_dis{dis}_reals{reals}.pdf")
 
 # -------------------------------
-#
 # scar overlap, all three axes in one figure
-#
 # -------------------------------
 fig, ax = plt.subplots(figsize=(6, 4))
 
@@ -107,13 +102,11 @@ ax.legend()
 plt.tight_layout()
 plt.savefig(f"figures/scarprob_N{N}_dis{dis}_reals{reals}.pdf")
 
-if os.environ.get("DISPLAY"):
+if HAS_GUI:
     plt.show()
 
 # -------------------------------
-#
 # summary numbers
-#
 # -------------------------------
 for title, s, q in panels:
     for arr, lab in [(s, "Scar"), (q, "Qubit")]:

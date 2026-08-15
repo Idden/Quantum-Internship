@@ -5,8 +5,7 @@ from quantumScarFunctions import *
 
 # run this once per N. it is the only place a dense diagonalization happens.
 # it saves the clean scar states so xyz_parallel never has to build them again.
-
-N = int(os.environ.get("SCAR_N", 20))
+N = 12
 
 H0_clean, _, _, psi0, basisList = get_scar_ham(N, diagonalize=False)
 
