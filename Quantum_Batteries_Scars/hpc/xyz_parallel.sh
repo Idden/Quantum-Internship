@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=scar-bands
-#SBATCH --account=ece_mondrag2
-#SBATCH --partition=ece_mondrag2
+#SBATCH --account=ece_mondrag2_chi
+#SBATCH --partition=batch
 #SBATCH --array=0-19
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

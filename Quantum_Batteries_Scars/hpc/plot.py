@@ -32,8 +32,8 @@ for label in ("z", "y", "x"):
 
     tlist = parts[0]["tlist"]
 
-    np.savez(f"xyz_data/{label}_dis_N{N}_error_bands.npz",
-             tlist=tlist, seeds=seeds, scar=scar, qubit=qubit, scarprob=scarprob)
+    # np.savez(f"xyz_data/{label}_dis_N{N}_error_bands.npz",
+    #          tlist=tlist, seeds=seeds, scar=scar, qubit=qubit, scarprob=scarprob)
 
     data[label] = (scar, qubit, scarprob)
     reals = max(reals, len(seeds))
