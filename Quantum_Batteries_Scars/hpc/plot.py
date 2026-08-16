@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-N = 12            # must match xyz_parallel.py
+N = 20            # must match xyz_parallel.py
 dis = 0.3
 
 data = {}
