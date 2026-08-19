@@ -9,12 +9,13 @@ dis = 0.3
 
 data = {}
 reals = 0
+folder = "parts_N20_R500"
 
 for label in ("z", "y", "x"):
-    files = sorted(glob.glob(f"xyz_data/parts/{label}_dis_N{N}_task*.npz"))
+    files = sorted(glob.glob(f"xyz_data/{folder}/{label}_dis_N{N}_task*.npz"))
     if not files:
         raise SystemExit(
-            f"no part files matching xyz_data/parts/{label}_dis_N{N}_task*.npz - "
+            f"no part files matching xyz_data/{folder}/{label}_dis_N{N}_task*.npz - "
             f"check that N here matches the N in xyz_parallel.py"
         )
 
@@ -101,6 +102,34 @@ ax.legend()
 
 plt.tight_layout()
 plt.savefig(f"figures/scarprob_N{N}_dis{dis}_reals{reals}.pdf")
+
+if HAS_GUI:
+    plt.show()
+
+# -------------------------------
+# scar overlap and R(tau)
+# -------------------------------
+fig, axs = plt.subplots(3, 1, figsize=(6, 8), sharex=True)
+
+keys = ["x", "y", "z"]
+
+for ax, key, (title, s, q) in zip(axs, keys, panels):
+    for arr, lab in [(s, "Scar overlap"), (data[key][2], r"$R(\tau)$")]:
+        m, sem = band(arr)
+        line, = ax.plot(tlist, m)
+        ax.fill_between(tlist, m - sem, m + sem,
+                        color=line.get_color(), alpha=0.3, lw=0)
+
+    ax.set_title(title)
+    ax.set_ylabel("Overlap / $R(\\tau)$")
+    ax.set_ylim(0, 1)
+    ax.legend(fontsize=8)
+
+axs[-1].set_xlabel("Time")
+fig.suptitle("Scar subspace overlap and $R(\\tau)$")
+
+plt.tight_layout()
+plt.savefig("figures/scarprob_rtau_overlayed.pdf")
 
 if HAS_GUI:
     plt.show()
