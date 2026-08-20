@@ -114,9 +114,9 @@ fig, axs = plt.subplots(3, 1, figsize=(6, 8), sharex=True)
 keys = ["x", "y", "z"]
 
 for ax, key, (title, s, q) in zip(axs, keys, panels):
-    for arr, lab in [(s, "Scar overlap"), (data[key][2], r"$R(\tau)$")]:
+    for arr, lab in [(s, r"$R(\tau)$"), (data[key][2], "Scar overlap")]:
         m, sem = band(arr)
-        line, = ax.plot(tlist, m)
+        line, = ax.plot(tlist, m, label=lab)
         ax.fill_between(tlist, m - sem, m + sem,
                         color=line.get_color(), alpha=0.3, lw=0)
 

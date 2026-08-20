@@ -1,85 +1,57 @@
 """
-Test fixtures and pytest configuration.
+Shared pytest configuration for the quantum-scar test suite.
 
-Provides common fixtures for testing quantum battery simulations,
-including sample systems, states, and Hamiltonians.
+This file does three jobs:
+
+1. Puts the right directories on ``sys.path`` so that both
+   ``GitHub_QM.important.hpc.quantumScarFunctions`` (the same import path the
+   HPC scripts use) and the local helpers (``data_utils``, ``plot_utils``,
+   ``reference_pxp``) import no matter where pytest is invoked from.
+2. Provides session-cached fixtures for the scar Hamiltonian, so a chain of
+   a given size is diagonalised once per session instead of once per test.
+3. Provides the ``test_subdir`` fixture that tests use to save inspectable
+   artifacts under ``tests/test_output/<module>/<test_name>/``.
+
+There is deliberately no import of any simulation code at module scope --
+a broken import in the physics code should fail the tests that use it, not
+abort collection of the entire suite.
 """
 
-import sys
 import shutil
+import sys
 from pathlib import Path
 
-import pytest
 import numpy as np
-from quantum_battery.core import QuantumSystem, State, Hamiltonian
+import pytest
 
-# Ensure plot_utils and data_utils are importable from all test subdirectories
-sys.path.insert(0, str(Path(__file__).parent))
+# --------------------------------------------------------------------------
+# Path setup
+# --------------------------------------------------------------------------
+TESTS_DIR = Path(__file__).resolve().parent          # .../important/tests
+IMPORTANT_DIR = TESTS_DIR.parent                     # .../important
+REPO_ROOT = IMPORTANT_DIR.parent                     # .../GitHub_QM
+PACKAGE_ROOT = REPO_ROOT.parent                      # parent of GitHub_QM
 
-
-class SimpleHamiltonian(Hamiltonian):
-    """Simple test Hamiltonian - diagonal 2x2 matrix."""
-    
-    def __init__(self, eigenvalues: np.ndarray = None):
-        """Initialize with given eigenvalues."""
-        super().__init__(dim=2, time_dependent=False)
-        if eigenvalues is None:
-            eigenvalues = np.array([0.0, 1.0])
-        self.eigenvalues = eigenvalues
-    
-    def get_matrix(self, t: float = 0.0) -> np.ndarray:
-        """Return diagonal Hamiltonian."""
-        return np.diag(self.eigenvalues)
+# PACKAGE_ROOT makes "GitHub_QM.important.hpc.quantumScarFunctions" importable.
+# TESTS_DIR makes "data_utils" / "plot_utils" / "reference_pxp" importable.
+for _path in (str(PACKAGE_ROOT), str(TESTS_DIR)):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 
-@pytest.fixture
-def simple_hamiltonian():
-    """Fixture: Simple 2-level Hamiltonian."""
-    return SimpleHamiltonian()
-
-
-@pytest.fixture
-def initial_state():
-    """Fixture: Ground state |0⟩."""
-    state = State(dim=2, state_type="pure")
-    state.set_vector(np.array([1.0, 0.0]))
-    return state
-
-
-@pytest.fixture
-def superposition_state():
-    """Fixture: Superposition state (|0⟩ + |1⟩)/√2."""
-    state = State(dim=2, state_type="pure")
-    state.set_vector(np.array([1.0, 1.0]) / np.sqrt(2))
-    return state
-
-
-@pytest.fixture
-def simple_quantum_system(simple_hamiltonian, initial_state):
-    """Fixture: Simple 2-level quantum system."""
-    metadata = {
-        "name": "Simple Qubit",
-        "description": "Two-level system for testing"
-    }
-    return QuantumSystem(
-        hamiltonian=simple_hamiltonian,
-        initial_state=initial_state,
-        metadata=metadata
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "slow: test takes more than a couple of seconds"
     )
 
 
-@pytest.fixture
-def temp_results_dir(tmp_path):
-    """Fixture: Temporary directory for test results."""
-    results_dir = tmp_path / "results"
-    results_dir.mkdir()
-    return results_dir
-
-
+# --------------------------------------------------------------------------
+# Artifact directories
+# --------------------------------------------------------------------------
 @pytest.fixture(scope="session")
 def test_output_dir():
-    """Session-scoped fixture: root directory for test artifacts."""
-    output_dir = Path(__file__).parent / "test_output"
+    """Root directory for inspectable test artifacts, wiped once per session."""
+    output_dir = TESTS_DIR / "test_output"
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -88,16 +60,56 @@ def test_output_dir():
 
 @pytest.fixture
 def test_subdir(test_output_dir, request):
-    """Per-test fixture: unique subdirectory for artifacts.
-
-    Directory structure: test_output/<module>/<test_name>/
-    Parametrized tests get sanitised names (brackets → underscores).
-    """
-    module = request.module.__name__.split('.')[-1]
+    """Per-test artifact directory: ``test_output/<module>/<test_name>/``."""
+    module = request.module.__name__.split(".")[-1]
     test_name = (
-        request.node.name
-        .replace('[', '_').replace(']', '').replace('/', '_')
+        request.node.name.replace("[", "_").replace("]", "").replace("/", "_")
     )
     subdir = test_output_dir / module / test_name
     subdir.mkdir(parents=True, exist_ok=True)
     return subdir
+
+
+# --------------------------------------------------------------------------
+# Physics fixtures
+# --------------------------------------------------------------------------
+@pytest.fixture(scope="session")
+def scar_functions():
+    """The module under test, imported through the HPC import path."""
+    from GitHub_QM.important.hpc import quantumScarFunctions
+
+    return quantumScarFunctions
+
+
+@pytest.fixture(scope="session")
+def scar_system(scar_functions):
+    """
+    ``N -> (H0, eigenvalues, eigenstates, psi0, basisList)``, cached per size.
+
+    Diagonalising the same chain in twenty different tests is the single
+    biggest avoidable cost in this suite, so results are memoised.
+    """
+    cache = {}
+
+    def _build(N):
+        if N not in cache:
+            cache[N] = scar_functions.get_scar_ham(N)
+        return cache[N]
+
+    return _build
+
+
+@pytest.fixture(scope="session")
+def basis_list(scar_system):
+    """``N -> basisList`` for the periodic blockade-constrained basis."""
+
+    def _basis(N):
+        return scar_system(N)[4]
+
+    return _basis
+
+
+@pytest.fixture
+def rng():
+    """A seeded generator, so any randomised test is reproducible."""
+    return np.random.default_rng(12345)

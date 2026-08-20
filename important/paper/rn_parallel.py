@@ -27,12 +27,15 @@ def run_one(seed):
         H0_dis, eigenvalues, eigenstates = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=[dz, dy, dx])
 
         temp = 0
+        count = 0
         for i in range(len(eigenvalues) - 2):
             deltaE0 = eigenvalues[i+1] - eigenvalues[i]
             deltaE1 = eigenvalues[i+2] - eigenvalues[i+1]
-            temp += np.min([deltaE0, deltaE1]) / np.max([deltaE0, deltaE1])
+            if np.max([deltaE0, deltaE1]) > 1e-12:
+                temp += np.min([deltaE0, deltaE1]) / np.max([deltaE0, deltaE1])
+                count += 1
 
-        out.append(temp / (len(eigenvalues) - 2))
+        out.append(temp / count)
 
     return out
 
