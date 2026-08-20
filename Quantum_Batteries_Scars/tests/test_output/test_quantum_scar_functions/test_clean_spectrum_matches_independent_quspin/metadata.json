@@ -1,9 +1,0 @@
-{
-  "length": 10,
-  "basis_dimension": 123,
-  "max_abs_energy_difference": 8.659739592076221e-15,
-  "max_abs_z2_weight_difference": 0.18351761889569762,
-  "comparison_npz": "clean_student_quspin_comparison.npz",
-  "comparison_csv": "clean_student_quspin_comparison.csv",
-  "comparison_plot": "clean_student_quspin_comparison.png"
-}
