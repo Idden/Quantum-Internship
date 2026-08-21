@@ -10,7 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 from quantumScarFunctions import *
 import time
 
-N = 4
+N = 12
 wd = 0.6366896896896898
 wm = 1.0
 t_max = 200
@@ -19,6 +19,7 @@ reals = 200
 xyzdis_list = [0.0, 0.1, 0.3, 0.6, 0.9, 1.0]
 ampdis_list = [0.0, 0.1, 0.3, 0.6, 0.9, 1.0]
 
+run_qubit = False
 args = {"A": 0.1, "omega": wd}
 qargs = {"A": 0.1, "omega": wm}
 
@@ -61,20 +62,23 @@ def run_one(job):
     psi_t = qt.sesolve(H, psi_i, tlist, e_ops=[H0])
     Rtau_scar = np.array(np.real(psi_t.expect[0] - psi_t.expect[0][0]) / bandwidth)
 
-    np.random.seed(seed)   # same disorder for the qubits as for the scar chain
-    qH0_list, qH1_list, _ = get_qubit_ham(N, wm=wm, ham_disorder=[dz, dy, dx], ds_dis=ampdis)
+    if run_qubit:
+        np.random.seed(seed)   # same disorder for the qubits as for the scar chain
+        qH0_list, qH1_list, _ = get_qubit_ham(N, wm=wm, ham_disorder=[dz, dy, dx], ds_dis=ampdis)
 
-    dE_tot = 0
-    bw_tot = 0
-    for qH0, qH1 in zip(qH0_list, qH1_list):
-        qeigenvalues, qeigenstates = qH0.eigenstates()
-        bw_tot += qeigenvalues[-1] - qeigenvalues[0]
+        dE_tot = 0
+        bw_tot = 0
+        for qH0, qH1 in zip(qH0_list, qH1_list):
+            qeigenvalues, qeigenstates = qH0.eigenstates()
+            bw_tot += qeigenvalues[-1] - qeigenvalues[0]
 
-        qH = qt.QobjEvo([qH0, [qH1, coeff]], args=qargs)
-        qpsi_t = qt.sesolve(qH, qeigenstates[0], tlist, e_ops=[qH0])
-        dE_tot = dE_tot + np.real(qpsi_t.expect[0] - qpsi_t.expect[0][0])
+            qH = qt.QobjEvo([qH0, [qH1, coeff]], args=qargs)
+            qpsi_t = qt.sesolve(qH, qeigenstates[0], tlist, e_ops=[qH0])
+            dE_tot = dE_tot + np.real(qpsi_t.expect[0] - qpsi_t.expect[0][0])
 
-    Rtau_qubit = dE_tot / bw_tot
+        Rtau_qubit = dE_tot / bw_tot
+    else:
+        Rtau_qubit = np.zeros_like(Rtau_scar)
 
     return label, xyzdis, ampdis, seed, Rtau_scar, Rtau_qubit
 

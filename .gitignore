@@ -1,0 +1,70 @@
+# ============================================================
+#  GitHub_QM / Quantum-Internship
+#  Keep the repo to code + text. Data and generated output
+#  stay on disk (and on the HPC), not in git history.
+# ============================================================
+
+# ---------- Simulation data (the big one: ~440 MB) ----------
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.mat
+
+# Data output directories (belt-and-suspenders, in case a run
+# writes something that isn't .npz/.npy)
+xyz_data/
+xyz_amp_data/
+rn_data/
+npy_files/
+**/parts/
+**/parts_N*/
+**/island_*/cache/
+**/island_*/final/
+
+# ---------- Test / pytest output ----------
+important/tests/test_output/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------- Python junk ----------
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ---------- HPC / SLURM run artifacts ----------
+slurm-*.out
+*.err
+*.log
+logs/
+
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# ============================================================
+#  Optional: figures are currently tracked (~2.7 MB total).
+#  They're small, so keeping them is fine. If you'd rather
+#  regenerate them from the plotting scripts, uncomment:
+# ============================================================
+# figures/
+# *.png
+# *.pdf
+
+# ============================================================
+#  Exceptions: force-track small files you actually want,
+#  even if a rule above would ignore them.
+#  Example:
+# !important/paper/figures/fig1_final.pdf
+# ============================================================

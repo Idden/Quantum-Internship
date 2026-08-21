@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import qutip as qt
-from GitHub_QM.important.hpc.quantumScarFunctions import *
+from quantumScarFunctions import *
 
 # run this once per N. it is the only place a dense diagonalization happens.
 # it saves the clean scar states so xyz_parallel never has to build them again.
