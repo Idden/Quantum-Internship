@@ -9,9 +9,7 @@ where `R(t) = (⟨H0⟩(t) − ⟨H0⟩(0)) / bandwidth`.
 Because the state is pure and the evolution unitary, and the initial state is
 the ground state of `H0_dis`, the passive state *is* the ground state, so
 `ergotropy(t) = ⟨H0⟩(t) − E_min = R(t)·W`. **R is exactly the normalised
-ergotropy**, and `R(0) = 0` says the battery starts genuinely empty. That
-sentence is free and is the strongest thing available about the metric — put it
-in the manuscript.
+ergotropy**, and `R(0) = 0` says the battery starts genuinely empty.
 
 ---
 
