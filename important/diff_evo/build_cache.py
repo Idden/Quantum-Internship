@@ -75,6 +75,14 @@ def build_struct_cache(N, outdir, with_subspace=True):
         "strings": np.array(struct["strings"]),
     }
 
+    t0 = time.perf_counter()
+    s_thermal, s_thermal_std = sc.thermal_entropy_reference(struct)
+    payload["S_thermal"] = np.float64(s_thermal)
+    payload["S_thermal_std"] = np.float64(s_thermal_std)
+    print(f"thermal entropy reference N={N}: S = {s_thermal:.4f} +- {s_thermal_std:.4f} "
+          f"(naive (N/2)ln2 = {(N / 2) * np.log(2):.4f}) "
+          f"in {time.perf_counter() - t0:.2f}s", flush=True)
+
     t_sub = 0.0
     if with_subspace:
         t0 = time.perf_counter()
@@ -163,6 +171,9 @@ def load_struct(N, outdir):
         "d1_base": z["d1_base"],
         "strings": [str(s) for s in z["strings"]],
     }
+
+    if "S_thermal" in z.files:
+        struct["S_thermal"] = float(z["S_thermal"])
 
     sub = None
     if "scar_states" in z.files:

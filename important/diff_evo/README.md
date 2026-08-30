@@ -9,7 +9,9 @@ where `R(t) = (⟨H0⟩(t) − ⟨H0⟩(0)) / bandwidth`.
 Because the state is pure and the evolution unitary, and the initial state is
 the ground state of `H0_dis`, the passive state *is* the ground state, so
 `ergotropy(t) = ⟨H0⟩(t) − E_min = R(t)·W`. **R is exactly the normalised
-ergotropy**, and `R(0) = 0` says the battery starts genuinely empty.
+ergotropy**, and `R(0) = 0` says the battery starts genuinely empty. That
+sentence is free and is the strongest thing available about the metric — put it
+in the manuscript.
 
 ---
 
@@ -26,6 +28,8 @@ ergotropy**, and `R(0) = 0` says the battery starts genuinely empty.
 | `qutip_shim.py` | Minimal Qobj stand-in so the equivalence check can run where qutip is not installed. Not used when real qutip is present. |
 | `quantumScarFunctions.py` | Unchanged physics reference, except one bug fix (see below). |
 | `job_cache.sh` / `job_calib.sh` / `job_de.sh` | UIC ICC Slurm scripts, run in that order. |
+| `FILES.md` | What every file does and why, plus the dependency graph. |
+| `METRICS.md` | Every metric defined, with formulas and what each one catches. |
 
 ---
 
@@ -72,14 +76,14 @@ but **every evaluation now also logs**:
 
 | Metric | What it catches |
 |---|---|
-| `score_deph` | Dephased ergotropy difference. Work still extractable once coherences are lost. Separates coherent charging from heating cleanly. |
+| `score_deph` | Dephased (**incoherent**, Francica et al. PRL 125 180603) ergotropy difference. Work still extractable once coherences are lost. Separates coherent charging from heating cleanly. |
 | `score_first` | First-peak height difference — the coherent charging event. |
 | `score_power` | `max_t R(t)/t` difference — charging power. Likely where the real result is. |
-| `S_at_t1`, `S_at_tmax`, `S_max` | Half-chain entropy at the peak. `S/S_max ≈ 0.05` is coherent, `≈ 0.3+` is thermal. |
+| `S_at_t1`, `S_at_tmax` | Half-chain entropy at the peak, in **nats** (no ratio). At N=12: absolute max ln(21)=3.045, Haar-random 2.472, weak-disorder eigenstates ~2.31. Below ~0.5 nats is coherent. |
 | `maxR_scar` / `maxR_qubit` separately | So you can check the score was not won by *crippling the benchmark*. |
 
 This is already earning its keep. A calibration-run candidate scored
-`+0.125` on `max R` — the best in its generation — with `S/S_max = 0.44` and a
+`+0.125` on `max R` — the best in its generation — with `S = 1.83 nats` and a
 **dephased score of −0.002**. It is pure heating. The old objective would have
 chased it.
 
@@ -131,16 +135,22 @@ Nothing else in that file changed.
    (`important/hpc/` and `important/paper/helper/`). The paper notebooks import
    one and the HPC scripts import the other. Only the `hpc` copy is patched
    here. Consolidate.
-2. **`R` is intensive** because of the bandwidth normalisation. The standard
+2. **Entropy is no longer normalised at all.** It was first divided by the
+   unconstrained `(N/2) ln 2 = 4.159`, which exceeds the absolute maximum
+   `ln 21 = 3.045` this blockade allows. The Haar value 2.472 is a property of
+   the Hilbert space, not the Hamiltonian, and the Hamiltonian's own thermal
+   entropy collapses under disorder (2.31 at x=y=z=0.01 to 0.18 at 1.0 —
+   localisation), so no fixed denominator is honest. `S` is reported in nats.
+3. **`R` is intensive** because of the bandwidth normalisation. The standard
    many-body quantum-battery claim is *superextensive* — power scaling faster
    than N. The current normalisation makes that claim invisible by
    construction. If a collective advantage is the point, also plot unnormalised
    power vs N.
-3. **Global vs local ergotropy.** The chain's ergotropy needs a global
+4. **Global vs local ergotropy.** The chain's ergotropy needs a global
    many-body unitary; the qubits' needs only local ones. `qubit_metrics`
    already computes the qubits' passive state *per qubit*, which is the honest
    version, but a referee will still raise the asymmetry. Address it in text.
-4. **`hy` sign convention.** The chain's y-disorder operator is `+σ_y` in the
+5. **`hy` sign convention.** The chain's y-disorder operator is `+σ_y` in the
    `(|0⟩,|1⟩)` string ordering, while the qubits use qutip's `σ_y`. Both are
    reproduced exactly as `quantumScarFunctions.py` has them, and for a single
    qubit the sign of `h_y` is a symmetry, so nothing is wrong — but the two

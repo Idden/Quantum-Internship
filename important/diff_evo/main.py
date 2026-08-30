@@ -244,7 +244,23 @@ def evaluate_point(x, y, z, ds, dd, wd, wq, want_curves=False):
     out = {k: float(np.mean([r[k] for r in rows])) for k in rows[0]}
     out["score_std"] = float(np.std([r["score"] for r in rows]))
     out["seed_scores"] = [float(r["score"]) for r in rows]
-    out["S_max"] = float((N / 2) * np.log(2.0))
+    # Entropy is reported in NATS, not as a ratio.
+    #
+    # Every candidate denominator was wrong or misleading. (N/2) ln 2 = 4.159
+    # at N=12 exceeds the absolute maximum ln 21 = 3.045 that this constrained
+    # space allows, so it is unreachable. The Haar-typical value 2.472 is a
+    # real scale but it is a property of the Hilbert space, not of the
+    # Hamiltonian, and the Hamiltonian's own thermal entropy collapses under
+    # disorder (2.31 at x=y=z=0.01 down to 0.18 at 1.0, i.e. localisation) --
+    # so dividing by a fixed number reads "coherent" for a state that is
+    # actually localised.
+    #
+    # Reference values for reading S, NOT applied as denominators:
+    #     absolute max      ln 21          = 3.045   (N=12)
+    #     Haar typical                     = 2.472
+    #     ETH eigenstates, weak disorder   ~ 2.31
+    #     ETH eigenstates, x=y=z=1.0       ~ 0.18    (localised)
+    out["S_reference_haar"] = float(struct.get("S_thermal", np.nan))
 
     if want_curves:
         out["_curves"] = curves
@@ -358,7 +374,7 @@ def objective(vec):
                 f"pow={res['score_power']:+.4e} "
                 f"Rs={res['maxR_scar']:.4f}@{res['tmax_scar']:.1f} "
                 f"Rq={res['maxR_qubit']:.4f} "
-                f"S/Smax={res['S_at_tmax'] / res['S_max']:.2f} "
+                f"S={res['S_at_tmax']:.3f} "
                 f"| x={x:.3e} y={y:.3e} z={z:.3e} ds={ds:.3f} dd={dd:.3f} "
                 f"wd={wd:.4f} wq={wq:.4f} elapsed={elapsed:.2f}s",
                 flush=True,
@@ -639,8 +655,11 @@ def main():
         "final": {k: v for k, v in s.items()},
         "success": bool(s["score"] > 0.0),
         "meaning": "success means mean_seed[max R_scar - max R_qubit] > 0 on the "
-                   "final seed set. Check score_deph and S_at_tmax/S_max before "
-                   "believing it: a positive score with S/S_max near 0.3 is heating.",
+                   "final seed set. Check score_deph and S_at_tmax (in nats; a "
+                   "Haar-random state is ~2.47 at N=12) before believing it: a "
+                   "positive score with S near the Haar value is heating, and a "
+                   "positive score with a small maxR_qubit means the benchmark "
+                   "was crippled rather than the chain improved.",
     }
     with open(json_path, "w") as f:
         json.dump(summary, f, indent=2)
@@ -650,8 +669,10 @@ def main():
     print(f"power score        = {s['score_power']:+.6e}", flush=True)
     print(f"first-peak score   = {s['score_first']:+.6e}", flush=True)
     print(f"max R scar/qubit   = {s['maxR_scar']:.6f} / {s['maxR_qubit']:.6f}", flush=True)
-    print(f"S(t_max)/S_max     = {s['S_at_tmax'] / s['S_max']:.3f} "
-          f"(near 0 = coherent, near 1 = thermal)", flush=True)
+    print(f"S(t_max)           = {s['S_at_tmax']:.4f} nats   "
+          f"[Haar-typical {s['S_reference_haar']:.4f}, absolute max ln(21)=3.045 at N=12]",
+          flush=True)
+    print(f"S(t_1)             = {s['S_at_t1']:.4f} nats", flush=True)
     print(f"saved {npz_path}", flush=True)
     print(f"saved {json_path}", flush=True)
 

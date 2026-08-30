@@ -662,3 +662,40 @@ def build_scar_subspace(struct):
         "z2_overlap_zero_scar": z2_overlap,
         "clean_eigenvalues": E,
     }
+
+
+def thermal_entropy_reference(struct, n_samples=200, seed=0):
+    """
+    The half-chain entropy of a FULLY THERMALISED state in this model.
+
+    (N/2) ln 2 is the wrong yardstick. It is the maximum for an
+    unconstrained spin chain, but the Rydberg blockade shrinks the
+    accessible space to the Lucas number L_N, which is far smaller than
+    2^N, and a bipartition of a constrained space cannot reach the
+    unconstrained Page value either.
+
+    Measured at N = 12 (D = 322):
+
+        (N/2) ln 2                              = 4.159
+        Haar-random state in constrained space  = 2.472 +- 0.026
+        mid-spectrum eigenstates of H0_dis      = 2.313 +- 0.076
+
+    So a state that has thermalised as completely as this model allows
+    sits at S/S_naive ~ 0.56-0.59, NOT at 1. Normalising by (N/2) ln 2
+    therefore makes every state look about 40% less thermal than it is,
+    which is exactly the wrong direction for a metric whose job is to
+    catch heating.
+
+    This function returns the Haar-random value, which is the honest
+    ceiling: it is model-independent given the constrained basis, cheap,
+    and it is what "as thermal as this Hilbert space gets" means.
+    """
+    rng = np.random.default_rng(seed)
+    D = struct["D"]
+
+    vals = np.empty(n_samples)
+    for k in range(n_samples):
+        v = rng.normal(size=D) + 1j * rng.normal(size=D)
+        vals[k] = half_chain_entropy(struct, v / np.linalg.norm(v))
+
+    return float(vals.mean()), float(vals.std())
