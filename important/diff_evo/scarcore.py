@@ -421,13 +421,6 @@ def ergotropy_curves(E, pops):
     i.e. R is exactly the normalised ergotropy and R(0) = 0 says the
     battery starts genuinely empty. That is the strongest thing that can
     be said for the metric and it is free.
-
-    R_deph is the work still extractable once the coherences between H0
-    eigenstates are lost: sort the populations descending onto the
-    ascending energies. R_deph <= R always, and the gap between them is
-    what separates coherent charging from plain heating -- at the
-    coherent point in the earlier review 79% of R survived dephasing, at
-    the thermal point only 31%.
     """
     energy = E @ pops                                   # (nt,)
     order = np.argsort(-pops, axis=0)                   # descending populations

@@ -337,6 +337,39 @@ def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qub
             H1_list.append(qt.Qobj(Hr))
 
         return H1_list, driveWeights
+
+
+def get_scar_H1_no_z2(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False):
+    if fixed_seed:
+        np.random.seed(0)
+
+    if N_dis is None:
+        N_dis = N
+
+    basisLen = len(basisList)
+
+    # default no-disorder drive weights
+    driveWeights = np.ones(N)
+
+    # choose which sites get drive-strength disorder
+    if ds_dis != 0.0:
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        driveWeights[dis_sites] += np.random.uniform(-ds_dis, ds_dis, N_dis)
+
+    diagLocationH1 = list(range(basisLen))
+
+    diagH1 = []
+
+    for i in range(basisLen):
+        bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
+        diagH1.append(np.dot(driveWeights, bitString))
+
+    H1 = sp.csr_matrix(
+        (diagH1, (diagLocationH1, diagLocationH1)),
+        shape=(basisLen, basisLen)
+    )
+
+    return qt.Qobj(H1), driveWeights
     
 def get_Hy(N, basisList):
 
