@@ -138,8 +138,6 @@ def Rtau_plot_qubit(qH0_list, qH1_list, N, qargs=None, tlist=None, reals=1, plot
 def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=1, args=None):
 
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
-    H1, driveWeights = get_scar_H1(N, basisList)
-    zero_scar, z2_overlap = get_zero_scar(N)
 
     # find scar indices using overlaps
     sections = np.linspace(eigenvalues[0] - 0.5, eigenvalues[-1] + 0.5, N+2)
@@ -169,7 +167,6 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=
         scarIndices.append(highestOverlapIndex)
     
     scarStates = [eigenstates[i] for i in scarIndices]
-    scarStates[len(scarIndices) // 2] = zero_scar # sets zero energy scar state to S2 one
 
     if plot_arc:
         amplitudes = []
@@ -187,28 +184,6 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=
         plt.ylabel("Probability")
         plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
         plt.show()
-
-    totalScarProbs = np.zeros(len(tlist))
-    for _ in range(reals):
-        H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=disorder)
-        H_dis = qt.QobjEvo([H0_dis, [H1, coeff]], args=args)
-        psi_t = qt.sesolve(H_dis, eigenstates_dis[0], tlist)
-
-        scarProbs = []
-        for states in psi_t.states:
-            temp = 0
-            for scars in scarStates:
-                temp += np.abs(scars.dag() * states)**2
-            scarProbs.append(temp)
-        totalScarProbs += np.array(scarProbs)
-    totalScarProbs = totalScarProbs / reals
-
-    plt.plot(tlist, totalScarProbs)
-    plt.ylim(0, 1.05)
-    plt.xlabel("Time")
-    plt.ylabel("Total Scar Probability")
-    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
-    plt.show()
 
     return scarIndices, scarStates
 
