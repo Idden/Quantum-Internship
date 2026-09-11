@@ -83,11 +83,8 @@ def get_tau_r(N):
     return ts[np.argmax(f)]
 
 
-def get_scar_ham(N, fixed_seed=False, ohms=1.0, diagonalize=True):
+def get_scar_ham(N, ohms=1.0, diagonalize=True):
     assert (N % 2 == 0), "N must be a multiple of 2"
-
-    if fixed_seed:
-        np.random.seed(0)
 
     basisList = binNoConsecOnesEfficient(N)
     basisList = [
@@ -203,9 +200,9 @@ def get_scar_ham(N, fixed_seed=False, ohms=1.0, diagonalize=True):
     return H0, eigenvalues, eigenstates, psi0, basisList
 
 
-def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False, diagonalize=True):
-    if fixed_seed:
-        np.random.seed(0)
+def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=None, diagonalize=True):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
 
     if N_dis == None:
         N_dis = N
@@ -291,9 +288,9 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
 
     return H0_dis, eigenvalues, eigenstates
 
-def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qubit=False):
-    if fixed_seed:
-        np.random.seed(0)
+def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=None, indv_qubit=False):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
 
     if N_dis is None:
         N_dis = N
@@ -346,9 +343,9 @@ def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qub
         return H1_list, driveWeights
 
 
-def get_scar_H1_no_z2(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False):
-    if fixed_seed:
-        np.random.seed(0)
+def get_scar_H1_no_z2(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=None):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
 
     if N_dis is None:
         N_dis = N
@@ -407,9 +404,9 @@ def get_Hy(N, basisList):
     return Hy
 
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=False, ds_dis=0.0, sigz_ham=False):
-    if fixed_seed:
-        np.random.seed(0)
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=None, ds_dis=0.0, sigz_ham=False):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
 
     if N_dis == None:
         N_dis = N
