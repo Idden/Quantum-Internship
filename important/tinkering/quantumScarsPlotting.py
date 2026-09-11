@@ -213,7 +213,7 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=
     return scarIndices, scarStates
 
 
-def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1, save_fig=False, args=None):
+def plot_scar_vn_entrop(N, wd, tlist, disorder=[0, 0, 0], reals=1, save_fig=False, args=None):
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H1, driveWeights = get_scar_H1(N, basisList)
 
