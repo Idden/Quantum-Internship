@@ -201,7 +201,7 @@ def scar_overlap_from_states(N, psi0, tlist, psi_t, plot_arc=False):
     plt.title(f"Overlap of Psi_t and Scar States")
     plt.show()
 
-    return scarIndices, scarStates
+    return scarIndices, scarStates, scarProbs
 
 def vn_from_states(N, basisList, psi_t, tlist):
 
