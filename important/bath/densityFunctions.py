@@ -59,7 +59,7 @@ def calculate_pstate(rho, H, H_eig=None):
     """Passive state (Eq. 5) and its energy.
 
     rho's eigenvalues s_k sorted DEcreasing are placed on H's eigenstates
-    sorted INcreasing (qutip returns eigenstates ascending already).
+    sorted Increasing (qutip returns eigenstates ascending already).
     H_eig: optional output of H.eigenstates(), so H is not rediagonalized
     at every time step.
     Returns (pstate, penergy) with penergy = Tr[H pstate].
