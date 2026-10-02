@@ -1,73 +1,83 @@
-import argparse
 import glob
-import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-
-mpl.rcParams["font.size"] = 11
 
 # =========================================================================
-# Grid of (ergotropy_scar - ergotropy_qubit) vs t from decoherence_drive_sweep.py
-#   columns: bath rate (dephasing gamma_phi or relaxation gamma_1)
-#   rows:    drive strength A, largest at the top
+# Plots every N found in deco_drive_data/<bath>_N*/ on the same grid.
+#   columns: bath rate,  rows: drive strength A (largest on top)
+# Makes two pdfs:
+#   deco_drive_diff_<bath>.pdf      ergotropy_scar - ergotropy_qubit, all N together
+#   deco_drive_erg_<bath>_N<N>.pdf  ergotropy_scar (solid) and ergotropy_qubit (dashed), one pdf per N
 #
-#   python decoherence_drive_plot.py --bath dephasing --N 10
-#   python decoherence_drive_plot.py --bath relaxation --N 10 --free-y
+#   python decoherence_drive_plot.py              (dephasing)
+#   python decoherence_drive_plot.py relaxation
 # =========================================================================
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--bath", choices=("dephasing", "relaxation"), default="dephasing")
-parser.add_argument("--N", type=int, default=10)
-parser.add_argument("--datadir", default="deco_drive_data")
-parser.add_argument("--free-y", action="store_true", help="each panel gets its own y range")
-parser.add_argument("--show", action="store_true")
-cli = parser.parse_args()
+bath = sys.argv[1] if len(sys.argv) > 1 else "dephasing"
+lw = 0.7
 
-files = sorted(glob.glob(os.path.join(cli.datadir, f"{cli.bath}_N{cli.N}", "g*_A*.npz")))
-files = [f for f in files if not f.endswith(".tmp.npz")]
-assert files, f"no npz files for bath={cli.bath}, N={cli.N} in {cli.datadir}"
+# load every finished cell: (N, gamma, A) -> data
+data = {}
+for f in glob.glob(f"deco_drive_data/{bath}_N*/g*_A*.npz"):
+    if not f.endswith(".tmp.npz"):
+        d = dict(np.load(f))
+        data[(int(d["N"]), float(d["gamma"]), float(d["A"]))] = d
 
-cells = {}
-for f in files:
-    d = np.load(f)
-    cells[(float(d["gamma"]), float(d["A"]))] = (d["tlist"], d["erg_scar"] - d["erg_qubit"])
+assert data, f"no data found for {bath}"
 
-gammas = sorted({g for g, _ in cells})
-As = sorted({A for _, A in cells}, reverse=True)     # largest A on the top row
+Ns = sorted({N for N, g, A in data})
+gammas = sorted({g for N, g, A in data})
+As = sorted({A for N, g, A in data}, reverse=True)
 
-sym = r"\gamma_\phi" if cli.bath == "dephasing" else r"\gamma_1"
+sym = r"\gamma_\phi" if bath == "dephasing" else r"\gamma_1"
+print(f"{bath}: N = {Ns}, {len(data)} cells")
 
-fig, axes = plt.subplots(len(As), len(gammas), squeeze=False,
-                         sharex=True, sharey=not cli.free_y,
-                         figsize=(2.6 * len(gammas), 1.9 * len(As)))
 
-for i, A in enumerate(As):
-    for j, g in enumerate(gammas):
-        ax = axes[i, j]
-        ax.axhline(0, color="k", lw=0.6, ls="--")
+def plot_diff(ax, d, color, N):
+    ax.axhline(0, color="k", lw=0.6, ls="--")
+    ax.plot(d["tlist"], d["erg_scar"] - d["erg_qubit"], color=color, lw=lw, label=f"N={N}")
 
-        if (g, A) in cells:
-            t, diff = cells[(g, A)]
-            ax.plot(t, diff, lw=1.2)
-        else:
-            ax.text(0.5, 0.5, "missing", ha="center", va="center",
-                    transform=ax.transAxes, color="gray")
 
-        ax.grid(True, alpha=0.3)
-        if i == 0:
-            ax.set_title(rf"${sym} = {g:g}$")
-        if j == 0:
-            ax.set_ylabel(rf"$A = {A:g}$")
+def plot_erg(ax, d, color, N):
+    ax.plot(d["tlist"], d["erg_scar"], color=color, lw=lw, label=f"scar N={N}")
+    ax.plot(d["tlist"], d["erg_qubit"], color=color, lw=lw, ls="--", label=f"qubit N={N}")
 
-fig.supxlabel("Time")
-fig.suptitle(rf"$\mathcal{{E}}_{{\rm scar}} - \mathcal{{E}}_{{\rm qubit}}$ (per bandwidth),  "
-             f"{cli.bath},  N = {cli.N}")
-fig.tight_layout()
 
-out = f"deco_drive_grid_{cli.bath}_N{cli.N}.png"
-fig.savefig(out, dpi=200)
-print(f"saved {out}  ({len(cells)} of {len(As) * len(gammas)} cells)")
+def make_grid(plot_cell, Ns_here, title, out):
+    fig, axes = plt.subplots(len(As), len(gammas), sharex=True, sharey=True, squeeze=False,
+                             figsize=(2.6 * len(gammas), 1.9 * len(As)))
 
-if cli.show:
-    plt.show()
+    for i, A in enumerate(As):
+        for j, g in enumerate(gammas):
+            ax = axes[i, j]
+            for k, N in enumerate(Ns_here):
+                if (N, g, A) in data:
+                    plot_cell(ax, data[(N, g, A)], f"C{k}", N)
+            ax.grid(True, alpha=0.3)
+            if i == 0:
+                ax.set_title(rf"${sym} = {g:g}$")
+            if j == 0:
+                ax.set_ylabel(rf"$A = {A:g}$")
+
+    # legend from every panel, so it still works if the top-right cell is missing
+    handles = {}
+    for ax in axes.flat:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            handles[l] = h
+    axes[0, -1].legend(handles.values(), handles.keys(), fontsize=7)
+    fig.supxlabel("Time")
+    fig.suptitle(f"{title},  {bath}")
+    fig.tight_layout()
+    fig.savefig(out)
+    print(f"saved {out}")
+
+
+# difference: every N on the same grid
+make_grid(plot_diff, Ns, r"$\mathcal{E}_{\rm scar} - \mathcal{E}_{\rm qubit}$ (per bandwidth)",
+          f"deco_drive_diff_{bath}.pdf")
+
+# individual ergotropies: one pdf per N
+for N in Ns:
+    make_grid(plot_erg, [N], rf"$\mathcal{{E}}_{{\rm scar}}$ (solid),  $\mathcal{{E}}_{{\rm qubit}}$ (dashed),  N = {N}",
+              f"deco_drive_erg_{bath}_N{N}.pdf")

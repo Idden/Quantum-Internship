@@ -12,6 +12,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from quantumScarFunctions import *
 from densityFunctions import *
 
+# sbatch --export=ALL,BATH=dephasing decoherence_drive_sweep.sh
+
 # =========================================================================
 # Grid sweep: bath rate (columns) x drive strength A (rows), no disorder.
 # One grid cell = one exact Lindblad solve for the scar chain + one for the
@@ -24,7 +26,7 @@ from densityFunctions import *
 # Plot with decoherence_drive_plot.py.
 # =========================================================================
 
-N = 10
+N = 8
 wm = 1.0
 t_max = 200          # charging time (drive on)
 t_idle = 0.0         # idle time after charging (drive off, bath still on)
@@ -35,7 +37,7 @@ n_idle = 500
 gamma_list = [0.0, 0.001, 0.003, 0.01, 0.03, 0.1]
 
 # rows: drive strength A. A = 0 is a bath-only control row
-A_list = [0.0, 0.05, 0.1, 0.2, 0.5, 1.0]
+A_list = [0.01, 0.05, 0.1, 0.2, 0.5, 1.0]
 
 BATHS = ("dephasing", "relaxation")
 OUTDIR = "deco_drive_data"
