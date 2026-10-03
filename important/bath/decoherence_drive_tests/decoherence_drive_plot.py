@@ -48,7 +48,6 @@ def plot_erg(ax, d, color, N):
 def plot_pop(ax, d, color, N):
     if "scar_pop" not in d:       # cell from before scar_pop was added
         return
-    ax.axhline(d["scar_pop_floor"], color=color, lw=0.6, ls=":")
     ax.plot(d["tlist"], d["scar_pop"], color=color, lw=lw, label=f"N={N}")
 
 
@@ -90,7 +89,7 @@ for N in Ns:
     make_grid(plot_erg, [N], rf"$\mathcal{{E}}_{{\rm scar}}$ (solid),  $\mathcal{{E}}_{{\rm qubit}}$ (dashed),  N = {N}",
               f"deco_drive_erg_{bath}_N{N}.pdf")
 
-# scar-tower population: every N on the same grid, dotted line = maximally mixed value (N+1)/D
+# scar-tower population: every N on the same grid
 if any("scar_pop" in d for d in data.values()):
-    make_grid(plot_pop, Ns, "scar-tower population (dotted: maximally mixed value)",
+    make_grid(plot_pop, Ns, "scar-tower population",
               f"deco_drive_pop_{bath}.pdf")
