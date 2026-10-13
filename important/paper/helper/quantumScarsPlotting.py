@@ -6,7 +6,7 @@ from helper.quantumScarFunctions import *
 
 mpl.rcParams["font.size"] = 12
 
-def plotEigEnergies(H, N):
+def plotEigEnergies(H, N, chiral_test=False):
 
     eigenvalues = H.eigenenergies()
 
@@ -18,6 +18,9 @@ def plotEigEnergies(H, N):
     plt.grid(True, alpha=0.4)
     plt.title(f"Energies of Eigenvalues N={N}")
     plt.show()
+
+    if chiral_test:
+        print("Chiral Symmetry Test: ", np.sum(eigenvalues))
 
 
 def plotAmpEigenstatesZ2Log(H, z2Ket, N):
@@ -131,8 +134,7 @@ def Rtau_plot_qubit(qH0_list, qH1_list, N, qargs=None, tlist=None, reals=1, plot
 
     return plotQubit_test
 
-
-def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=1, args=None):
+def scar_overlap_from_states(N, psi0, tlist, psi_t, plot_arc=False, save_fig=False):
 
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H1, driveWeights = get_scar_H1(N, basisList)
@@ -182,69 +184,43 @@ def giveMeScarOverlap(N, psi0, tlist, disorder=[0, 0, 0], plot_arc=False, reals=
         plt.ylim(10**-5, 1)
         plt.xlabel("Eigenvalues")
         plt.ylabel("Probability")
-        plt.title(f"Overlap of Z2 State and Scar States w/ {disorder} Disorder")
+        plt.title(f"Overlap of Z2 State and Scar States")
         plt.show()
 
-    totalScarProbs = np.zeros(len(tlist))
-    for _ in range(reals):
-        H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=disorder)
-        H_dis = qt.QobjEvo([H0_dis, [H1, coeff]], args=args)
-        psi_t = qt.sesolve(H_dis, eigenstates_dis[0], tlist)
+    scarProbs = []
+    for states in psi_t.states:
+        temp = 0
+        for scars in scarStates:
+            temp += np.abs(scars.dag() * states)**2
+        scarProbs.append(temp)
 
-        scarProbs = []
-        for states in psi_t.states:
-            temp = 0
-            for scars in scarStates:
-                temp += np.abs(scars.dag() * states)**2
-            scarProbs.append(temp)
-        totalScarProbs += np.array(scarProbs)
-    totalScarProbs = totalScarProbs / reals
-
-    plt.plot(tlist, totalScarProbs)
+    plt.plot(tlist, scarProbs)
     plt.ylim(0, 1.05)
     plt.xlabel("Time")
     plt.ylabel("Total Scar Probability")
-    plt.title(f"Overlap of Psi_t and Scar States w/ {disorder} Disorder")
+    plt.title(f"Overlap of Psi_t and Scar States")
+    if save_fig:
+        plt.savefig(f"scar_overlap_N{N}.pdf")
     plt.show()
 
-    return scarIndices, scarStates
+    return scarIndices, scarStates, scarProbs
 
-
-def plot_scar_vn_entrop(N, wd, tlist=None, disorder=[0, 0, 0], reals=1, save_fig=False):
-    H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
-    H1, driveWeights = get_scar_H1(N, basisList)
+def vn_from_states(N, basisList, psi_t, tlist):
 
     vn_plot = []
-    for _ in range(reals):
-        H0_dis, eigenvalues_dis, eigenstates_dis = get_dis_scar_ham(H0_clean, N, basisList, ham_disorder=disorder)
+    for state in psi_t.states:
+        C_AB = get_C_AB_matrix(state, basisList, N)
+        sigma = np.linalg.svd(C_AB, compute_uv=False)
+        lambdas = sigma**2
+        lambdas = lambdas[lambdas > 1e-15]
+        vn_plot.append(-np.sum(lambdas * np.log(lambdas)))
 
-        args = {"A": 0.1, "omega": wd}
-
-        H = qt.QobjEvo([H0_dis, [H1, coeff]], args=args)
-        psi_t = qt.sesolve(H, eigenstates_dis[0], tlist)
-
-        temp = []
-        for state in psi_t.states:
-            C_AB = get_C_AB_matrix(state, basisList, N)
-            sigma = np.linalg.svd(C_AB, compute_uv=False)
-            lambdas = sigma**2
-            lambdas = lambdas[lambdas > 1e-15] # remove small values
-            vn = -np.sum(lambdas * np.log(lambdas))
-            temp.append(vn)
-        
-        vn_plot.append(temp)
-    
     vn_plot = np.array(vn_plot)
-    vn_plot = np.mean(vn_plot, axis=0)
     
     plt.plot(tlist, vn_plot)
     plt.title(f"Von Neumann Entropy vs. Time")
     plt.ylabel("Von Neumann Entropy")
     plt.xlabel("Time")
-    if save_fig:
-        plt.savefig(f"figures/vn_entrop_N{N}_disorder{disorder}_reals{reals}.pdf")
     plt.show()
 
     return vn_plot
-
-    

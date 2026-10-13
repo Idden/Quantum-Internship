@@ -75,12 +75,16 @@ def timed_const(t, A, limit):
 def make_coeff(r):
     return lambda t, args: args["A"] * np.sin(args[f"wd{r}"] * t)
 
+def get_tau_r(N):
+    H0, w, v, psi0, _ = get_scar_ham(N)
+    amp = np.array([s.overlap(psi0) for s in v])
+    ts = np.linspace(2, 15, 20000)
+    f = np.abs((np.abs(amp)**2) @ np.exp(-1j * np.outer(w, ts)))**2
+    return ts[np.argmax(f)]
 
-def get_scar_ham(N, fixed_seed=False, ohms=1.0, diagonalize=True):
+
+def get_scar_ham(N, ohms=1.0, diagonalize=True):
     assert (N % 2 == 0), "N must be a multiple of 2"
-
-    if fixed_seed:
-        np.random.seed(0)
 
     basisList = binNoConsecOnesEfficient(N)
     basisList = [
@@ -196,8 +200,10 @@ def get_scar_ham(N, fixed_seed=False, ohms=1.0, diagonalize=True):
     return H0, eigenvalues, eigenstates, psi0, basisList
 
 
-def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=False, diagonalize=True):
-    if fixed_seed:
+def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], fixed_seed=None, diagonalize=True):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
+    else:
         np.random.seed(0)
 
     if N_dis == None:
@@ -284,8 +290,10 @@ def get_dis_scar_ham(H0_dis, N, basisList, N_dis=None, ham_disorder=[0, 0, 0], f
 
     return H0_dis, eigenvalues, eigenstates
 
-def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qubit=False):
-    if fixed_seed:
+def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=None, indv_qubit=False):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
+    else:
         np.random.seed(0)
 
     if N_dis is None:
@@ -337,6 +345,41 @@ def get_scar_H1(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=False, indv_qub
             H1_list.append(qt.Qobj(Hr))
 
         return H1_list, driveWeights
+
+
+def get_scar_H1_no_z2(N, basisList, ds_dis=0.0, N_dis=None, fixed_seed=None):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
+    else:
+        np.random.seed(0)
+
+    if N_dis is None:
+        N_dis = N
+
+    basisLen = len(basisList)
+
+    # default no-disorder drive weights
+    driveWeights = np.ones(N)
+
+    # choose which sites get drive-strength disorder
+    if ds_dis != 0.0:
+        dis_sites = np.random.choice(N, size=N_dis, replace=False)
+        driveWeights[dis_sites] += np.random.uniform(-ds_dis, ds_dis, N_dis)
+
+    diagLocationH1 = list(range(basisLen))
+
+    diagH1 = []
+
+    for i in range(basisLen):
+        bitString = 2 * np.array([int(b) for b in basisList[i]]) - 1
+        diagH1.append(np.dot(driveWeights, bitString))
+
+    H1 = sp.csr_matrix(
+        (diagH1, (diagLocationH1, diagLocationH1)),
+        shape=(basisLen, basisLen)
+    )
+
+    return qt.Qobj(H1), driveWeights
     
 def get_Hy(N, basisList):
 
@@ -367,8 +410,10 @@ def get_Hy(N, basisList):
     return Hy
 
 
-def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=False, ds_dis=0.0, sigz_ham=False):
-    if fixed_seed:
+def get_qubit_ham(N, wm=1.0, ham_disorder=[0, 0, 0], N_dis=None, fixed_seed=None, ds_dis=0.0, sigz_ham=False):
+    if fixed_seed != None:
+        np.random.seed(fixed_seed)
+    else:
         np.random.seed(0)
 
     if N_dis == None:
@@ -490,3 +535,4 @@ def get_zero_scar(N, k0=None):
     z2_overlap = float(np.abs(np.vdot(z2, scar)) ** 2)
 
     return qt.Qobj(scar.reshape(-1, 1)), z2_overlap
+
