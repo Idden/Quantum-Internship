@@ -23,7 +23,7 @@ def plotEigEnergies(H, N, chiral_test=False):
         print("Chiral Symmetry Test: ", np.sum(eigenvalues))
 
 
-def plotAmpEigenstatesZ2Log(H, z2Ket, N):
+def plotAmpEigenstatesZ2Log(H, z2Ket, N, save_fig=False):
 
     amplitudes = []
 
@@ -38,7 +38,9 @@ def plotAmpEigenstatesZ2Log(H, z2Ket, N):
     plt.xlabel("Eigenvalues")
     plt.ylabel("Probability")
     plt.grid(True, alpha=0.4)
-    plt.ylim(10**-5, 1)
+    plt.ylim(10**-7, 1)
+    if save_fig:
+        plt.savefig(f"Z2_overlap_N{N}.pdf")
     plt.title(f"Overlap of Z2 State and Eigenstates N={N}")
     plt.show()
 
