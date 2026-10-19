@@ -136,8 +136,7 @@ def Rtau_plot_qubit(qH0_list, qH1_list, N, qargs=None, tlist=None, reals=1, plot
 
     return plotQubit_test
 
-def scar_overlap_from_states(N, psi0, tlist, psi_t, plot_arc=False, save_fig=False):
-
+def get_scar_states(N, psi0):
     H0_clean, eigenvalues, eigenstates, psi0, basisList = get_scar_ham(N)
     H1, driveWeights = get_scar_H1(N, basisList)
     zero_scar, z2_overlap = get_zero_scar(N)
@@ -172,23 +171,9 @@ def scar_overlap_from_states(N, psi0, tlist, psi_t, plot_arc=False, save_fig=Fal
     scarStates = [eigenstates[i] for i in scarIndices]
     scarStates[len(scarIndices) // 2] = zero_scar # sets zero energy scar state to S2 one
 
-    if plot_arc:
-        amplitudes = []
-        eigenvalueIndices = []
+    return scarIndices, scarStates
 
-        for i in scarIndices:
-            amplitudes.append(psi0.dag() * eigenstates[i])
-            eigenvalueIndices.append(eigenvalues[i])
-
-        print(scarIndices)
-        plt.plot(eigenvalueIndices, np.abs(amplitudes) ** 2, ".")
-        plt.yscale("log")
-        plt.ylim(10**-5, 1)
-        plt.xlabel("Eigenvalues")
-        plt.ylabel("Probability")
-        plt.title(f"Overlap of Z2 State and Scar States")
-        plt.show()
-
+def scar_overlap_from_states(N, tlist, scarStates, psi_t, save_fig=False, plot_fig=False):
     scarProbs = []
     for states in psi_t.states:
         temp = 0
@@ -196,16 +181,17 @@ def scar_overlap_from_states(N, psi0, tlist, psi_t, plot_arc=False, save_fig=Fal
             temp += np.abs(scars.dag() * states)**2
         scarProbs.append(temp)
 
-    plt.plot(tlist, scarProbs)
-    plt.ylim(0, 1.05)
-    plt.xlabel("Time")
-    plt.ylabel("Total Scar Probability")
-    plt.title(f"Overlap of Psi_t and Scar States")
-    if save_fig:
-        plt.savefig(f"scar_overlap_N{N}.pdf")
-    plt.show()
+    if plot_fig:
+        plt.plot(tlist, scarProbs)
+        plt.ylim(0, 1.05)
+        plt.xlabel("Time")
+        plt.ylabel("Total Scar Probability")
+        plt.title(f"Overlap of Psi_t and Scar States")
+        if save_fig:
+            plt.savefig(f"scar_overlap_N{N}.pdf")
+        plt.show()
 
-    return scarIndices, scarStates, scarProbs
+    return scarProbs
 
 def vn_from_states(N, basisList, psi_t, tlist):
 

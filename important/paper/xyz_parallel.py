@@ -3,15 +3,15 @@ import numpy as np
 import qutip as qt
 import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor
-from GitHub_QM.important.paper.helper.quantumScarFunctions import *
+from helper.quantumScarFunctions import *
 import time
 
-N = 16
+N = 6
 wd = 0.6366896896896898
 wm = 1.0
 t_max = 200
 tlist = np.linspace(0, t_max, 400)
-reals = 500
+reals = 50
 dis = 0.3
 
 dz = dis
