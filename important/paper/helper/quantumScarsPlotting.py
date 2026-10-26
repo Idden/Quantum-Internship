@@ -173,13 +173,27 @@ def get_scar_states(N, psi0):
 
     return scarIndices, scarStates
 
-def scar_overlap_from_states(N, tlist, scarStates, psi_t, save_fig=False, plot_fig=False):
+def scar_overlap_from_states(N, tlist, scarStates, psi_t, save_fig=False, plot_fig=False, indiv=False):
     scarProbs = []
-    for states in psi_t.states:
+
+    if indiv:
+        individualProbs = []
+    else:
+        individualProbs = None
+
+    for state in psi_t.states:
         temp = 0
-        for scars in scarStates:
-            temp += np.abs(scars.dag() * states)**2
+        
+        for scar in scarStates:
+            temp += np.abs(scar.dag() * state)**2
         scarProbs.append(temp)
+
+    if indiv:
+        for scar in scarStates:
+            temp = []
+            for state in psi_t.states:
+                temp.append(np.abs(scar.dag() * state)**2)
+            individualProbs.append(temp)
 
     if plot_fig:
         plt.plot(tlist, scarProbs)
@@ -191,7 +205,7 @@ def scar_overlap_from_states(N, tlist, scarStates, psi_t, save_fig=False, plot_f
             plt.savefig(f"scar_overlap_N{N}.pdf")
         plt.show()
 
-    return scarProbs
+    return scarProbs, individualProbs
 
 def vn_from_states(N, basisList, psi_t, tlist):
 
