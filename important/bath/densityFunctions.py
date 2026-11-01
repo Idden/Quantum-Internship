@@ -1,4 +1,5 @@
 from quantumScarFunctions import *
+from quantumScarsPlotting import *
 import numpy as np
 import qutip as qt
 import scipy.sparse as sp
@@ -94,7 +95,7 @@ def calculate_ergotropy(rho, H, H_evals=None):
     return float(energy - np.dot(s, np.sort(H_evals)))
 
 
-def battery_series(states, H0):
+def battery_series(states, H0, N, psi0, pop_scar=False):
     """Battery quantities along a trajectory rho(t), for the scar chain.
 
     Energies are divided by the bandwidth of H0, so W matches your R(tau).
@@ -108,6 +109,11 @@ def battery_series(states, H0):
     erg = np.array([calculate_ergotropy(r, H0, H_evals) for r in states]) / bandwidth
     S = np.array([vn_from_rho(r) for r in states])
     pur = np.array([purity_from_rho(r) for r in states])
+
+    if pop_scar:
+        _, scarStates = get_scar_states(N, psi0)
+        P_scar = scar_population(states, scarStates)
+        return {"W": W, "ergotropy": erg, "S": S, "purity": pur, "P_scar": P_scar}
 
     return {"W": W, "ergotropy": erg, "S": S, "purity": pur}
 
